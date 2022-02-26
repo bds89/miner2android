@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.bds89.miner2android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/mining"
+        android:label="@string/app_name"
+        android:roundIcon="@drawable/mining"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Miner2android"
+        android:usesCleartextTraffic="true">
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity"
+            android:configChanges="locale"/>
+        <activity
+            android:name=".NodeInfoActivity"
+            android:exported="true"
+            android:parentActivityName=".MainActivity"
+            android:configChanges="locale"/>
+        <activity
+            android:name=".itemEditActivity"
+            android:exported="true"
+            android:parentActivityName=".MainActivity"
+            android:configChanges="locale"/>
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="locale">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
+    </application>
+
+</manifest>

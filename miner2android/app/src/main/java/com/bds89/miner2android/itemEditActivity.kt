@@ -1,0 +1,225 @@
+package com.bds89.miner2android
+
+import android.content.Intent
+import android.content.res.ColorStateList
+import android.os.Build
+import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import androidx.core.content.ContextCompat
+import androidx.core.widget.doOnTextChanged
+import com.bds89.miner2android.databinding.ActivityItemEditBinding
+import com.google.android.material.textfield.TextInputLayout
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.viewpager2.widget.ViewPager2
+import kotlin.collections.ArrayList
+
+
+class itemEditActivity : AppCompatActivity() {
+    lateinit var binding: ActivityItemEditBinding
+    private var itemID: Int? = null
+    var save_button: Boolean = true
+    private lateinit var MenuPCadapter: MenuPCadapter
+    lateinit var toogle_menu: ActionBarDrawerToggle
+    lateinit var PCList:ArrayList<PC>
+    lateinit var pc: PC
+
+    //ViewPager2
+    private lateinit var viewPager: ViewPager2
+    private lateinit var adapter: IconNodeAdapter
+    var inIP = ""
+
+    var image_num_in_fragment: Int = 0
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityItemEditBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        if (intent?.getSerializableExtra(const.KEY_PC_item) != null) {
+            pc = intent.getSerializableExtra(const.KEY_PC_item) as PC
+            supportActionBar?.title = pc.name
+        } else {
+            supportActionBar?.title = getString(R.string.add_pc)
+        }
+
+        PCList = intent.getSerializableExtra(const.KEY_PCList) as ArrayList<PC>
+
+        //ViewPager2
+        adapter = IconNodeAdapter(this)
+        viewPager = binding.pager
+        viewPager.adapter = adapter
+        if (this::pc.isInitialized) {
+            viewPager.currentItem = pc.imageID
+            image_num_in_fragment = pc.imageID
+        }
+
+
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                image_num_in_fragment = viewPager.currentItem
+            }
+        })
+
+        initActivity()
+        initButtons()
+        init_menu()
+        change_button_color(binding.tilPort)
+        check_data_for_button_collor()
+    }
+
+    override fun onResume() {
+        //settings background
+        binding.llSettings.setBackgroundColor(0)
+        super.onResume()
+    }
+
+    private fun init_menu(){
+        toogle_menu = ActionBarDrawerToggle(this, binding.drawer, R.string.open, R.string.close)
+        binding.drawer.addDrawerListener(toogle_menu)
+        toogle_menu.syncState()
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.abar_item_edit, menu)
+        return true
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        if (save_button) menu?.findItem(R.id.abar_save)?.setIconTintList(ColorStateList.valueOf(ContextCompat.getColor(this@itemEditActivity, R.color.white)))
+        else menu?.findItem(R.id.abar_save)?.setIconTintList(ColorStateList.valueOf(ContextCompat.getColor(this@itemEditActivity, R.color.gray)))
+        return true
+    }
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (toogle_menu.onOptionsItemSelected(item)) return true
+        when (item.itemId) {
+            R.id.abar_save -> with(binding){
+                val check_name = check_name()
+                if ((etExIP.text.isNullOrEmpty() && etInIP.text.isNullOrEmpty()) || etPort.text.isNullOrEmpty() || check_name) {
+                    if (etExIP.text.isNullOrEmpty()) tilExIP.setError(getString(R.string.need_enter_an_ip))
+                    if (etInIP.text.isNullOrEmpty()) tilInIP.setError(getString(R.string.need_enter_an_iip))
+                    if (etPort.text.isNullOrEmpty()) tilPort.setError(getString(R.string.need_enter_port))
+                    if (check_name) tilName.setError(getString(R.string.name_unique))
+                } else {
+                    val editIntent = Intent()
+                    var pc = PC(
+                        name = etName.text.toString(),
+                        imageID = image_num_in_fragment,
+                        ex_IP = etExIP.text.toString(),
+                        port = etPort.text.toString(),
+                        in_IP = etInIP.text.toString(),
+                        in_port = etInport.text.toString())
+                    pc.upass = etPass.text.toString()
+                    if (itemID != null) {
+                        pc.id = itemID as Int
+                        editIntent.putExtra(const.KEY_edit_item, true)
+                    }
+                    editIntent.putExtra(const.KEY_PC_item, pc)
+
+                    setResult(RESULT_OK, editIntent)
+                    finish()
+                }
+            }
+        }
+        return true
+    }
+
+    private fun initActivity() {
+        if (this::pc.isInitialized) {
+            binding.apply {
+                itemID = pc.id
+                etName.setText(pc.name)
+                if (pc.ex_IP != "") etExIP.setText(pc.ex_IP)
+                if (pc.port != "") etPort.setText(pc.port)
+                if (pc.in_IP != "") {
+                    etInIP.setText(pc.in_IP)
+                    cbUseasgateway.isChecked = true
+                    inIP = pc.in_IP
+                    check_box()
+                }
+                if (!pc.in_port.isEmpty()) etInport.setText((pc.in_port))
+            }
+        }
+
+        //Menu adapter
+        binding.apply {
+            menuPCRecycler.layoutManager = LinearLayoutManager(this@itemEditActivity)
+            MenuPCadapter =
+                MenuPCadapter(PCList, 99999, object : MenuPCadapter.ItemClickListener {
+                    override fun itemClicked(position: Int) {
+                        performLeftMenuClick(position)
+                    }
+                })
+            menuPCRecycler.adapter = MenuPCadapter
+        }
+    }
+    //Left menu click
+    private fun performLeftMenuClick(position:Int){
+        val i = Intent(this, NodeInfoActivity::class.java).apply {
+            putExtra(const.KEY_PCList, PCList)
+            putExtra(const.KEY_PosNum, position)
+        }
+        this.startActivity(i)
+    }
+
+    private fun initButtons() = with(binding){
+        cbUseasgateway.setOnClickListener(){check_box()}
+    }
+    fun check_box() = with(binding){
+        if (cbUseasgateway.isChecked) {
+            tilExIP.hint = getString(R.string.gateway_PC_IP)
+            tilPort.hint = getString(R.string.gateway_PC_Port)
+            tilPass.hint = getString(R.string.gateway_Pass)
+            tilInIP.visibility = View.VISIBLE
+            tilInport.visibility = View.VISIBLE
+            if (!inIP.isNullOrEmpty()) etInIP.setText(inIP)
+        } else {
+            tilExIP.hint = "IP"
+            tilPort.hint = getString(R.string.port)
+            tilPass.hint = getString(R.string.password)
+            tilInIP.visibility = View.GONE
+            tilInport.visibility = View.GONE
+            inIP = etInIP.text.toString()
+            etInIP.setText(null)
+        }
+    }
+    fun change_button_color(view: TextInputLayout){
+        view.setError(null)
+                with(binding){
+                    save_button = (!etExIP.text.isNullOrEmpty() || !etInIP.text.isNullOrEmpty()) && !etPort.text.isNullOrEmpty()
+        }
+        invalidateOptionsMenu()
+    }
+
+    private fun check_data_for_button_collor(){
+        binding.apply {
+            etExIP.doOnTextChanged { text, start, before, count -> run { change_button_color(tilExIP) } }
+            etInIP.doOnTextChanged { text, start, before, count -> run { change_button_color(tilInIP) } }
+            etPort.doOnTextChanged { text, start, before, count -> run { change_button_color(tilPort) } }
+            etName.doOnTextChanged { text, start, before, count -> run { change_button_color(tilName) } }
+
+        }
+    }
+
+    private fun check_name(): Boolean{
+        if (this::pc.isInitialized) return false
+        for (PC in PCList) {
+            if (PC.name == binding.etName.text.toString()) return true
+        }
+        return false
+    }
+    //go to settings
+    fun go_to_settings(view: View?){
+        binding.llSettings.setBackgroundColor(ContextCompat.getColor(this, R.color.teal_700))
+        val i = Intent(this, SettingsActivity::class.java).apply {
+        }
+        startActivity(i)
+    }
+}

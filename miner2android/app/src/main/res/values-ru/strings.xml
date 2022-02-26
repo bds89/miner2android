@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Miner2android</string>
+    <string name="refresh">Обновить</string>
+    <string name="delete_error">Ошибка при удалении</string>
+    <string name="deleted">Удален</string>
+    <string name="name">Имя</string>
+    <string name="external_ip">IP</string>
+    <string name="port">Порт</string>
+    <string name="internal_ip">Внутренний IP</string>
+    <string name="user">User</string>
+    <string name="password">Пароль</string>
+    <string name="save">Сохранить</string>
+    <string name="edit">Редактировать</string>
+    <string name="delete">Удалить</string>
+    <string name="cantsavedata">Не могу сохранить данные. Исключение:</string>
+    <string name="add_pc">Добавить ПК</string>
+    <string name="settings">Настройки</string>
+    <string name="no_gpu_info">Нет информации о GPU</string>
+    <string name="no_sys_info">Нет информации о системе</string>
+    <string name="param_hashrate">Хэшрейт</string>
+    <string name="param_hashrate_hour">Хэшрейт за час</string>
+    <string name="param_hashrate_minute">Хэшрейт за минуту</string>
+    <string name="param_hashrate2">Хэшрейт 2</string>
+    <string name="param_hashrate_hour2">Хэшрейт за час 2</string>
+    <string name="param_hashrate_minute2">Хэшрейт за минуту 2</string>
+    <string name="param_name">Название</string>
+    <string name="param_vendor">Производитель</string>
+    <string name="param_power">Power limit</string>
+    <string name="param_fan_speed">Вентилятор</string>
+    <string name="param_temperature_gpu">Температура</string>
+    <string name="param_efficiency">Эффективность</string>
+    <string name="param_efficiency2">Эффективность 2</string>
+    <string name="param_shares">Shares</string>
+    <string name="param_used_ram">Использование памяти %</string>
+    <string name="param_cpu_temp">Температура ЦП</string>
+    <string name="param_cpu_freq">Частота ЦП</string>
+    <string name="param_cpu_fan">Вентилятор ЦП</string>
+
+    <string name="open">Открыть меню</string>
+    <string name="close">Скрыть меню</string>
+
+    <string name="gateway_PC_IP">IP шлюза</string>
+    <string name="gateway_PC_Port">Порт шлюза</string>
+    <string name="gateway_Pass">Пароль шлюза</string>
+    <string name="need_enter_an_ip">Необходимо ввести внешний IP(или внутренний IP)</string>
+    <string name="need_enter_an_iip">Необходимо ввести внутренний IP (или внешний)</string>
+    <string name="need_enter_port">Необходимо ввести порт</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="use_as_gateway">Подключаться через этот ПК (Шлюз)</string>
+    <string name="theme">Тема</string>
+    <string name="language">Язык</string>
+    <string name="system">Как в телефоне</string>
+    <string name="light">Светлая</string>
+    <string name="dark">Темная</string>
+    <string name="gpu_total">Видеокарт:</string>
+    <string name="hashrate">Хэшрейт:</string>
+    <string name="system_info">Информация о системе</string>
+    <string name="hello">Добавьте вашу ферму, нажав на кнопку внизу</string>
+    <string name="name_unique">Имя должно быть уникальным</string>
+    <string name="fan_auto">Автоматическое управление вентилятором</string>
+    <string name="apply">Применить</string>
+
+
+</resources>
