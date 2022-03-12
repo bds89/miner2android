@@ -27,6 +27,7 @@ import com.bds89.miner2android.databinding.VideocardBinding
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.*
+import okhttp3.Dispatcher
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -41,9 +42,13 @@ private val client = OkHttpClient()
 suspend fun getDataFromServer(pc: PC, req:String, params: MutableMap<String, String> = mutableMapOf()): String =
     withContext(Dispatchers.IO) {
         var ip = pc.ex_IP
-        if (pc.ex_IP.isEmpty()) ip = pc.in_IP
+        var port = pc.port
+        if (pc.ex_IP.isEmpty()) {
+            ip = pc.in_IP
+            port = pc.in_port
+        }
 
-        val url = "http://$ip:${pc.port}/$req"
+        val url = "http://$ip:${port}/$req"
         //create json of pc object
         val gson: Gson = GsonBuilder().create()
         var data = mutableMapOf(
@@ -86,6 +91,8 @@ class NodeInfoFragment : Fragment() {
 
     private var responce = ""
     private var responce_from_ViewModel = mutableMapOf<Int, String>()
+
+    private var gpus_lenght:Int = 0
 //    private var resonce_time = 0L
 
 
@@ -122,6 +129,7 @@ class NodeInfoFragment : Fragment() {
         }
         dataModel.limits.observe(activity as LifecycleOwner) {
             limits = it
+            GlobalScope.launch(Dispatchers.IO) { send_limits() }
         }
         dataModel.responce.observe(activity as LifecycleOwner) {
             responce_from_ViewModel = it
@@ -205,6 +213,7 @@ class NodeInfoFragment : Fragment() {
                         ).show()
                     }
                     if (this@NodeInfoFragment::gpus.isInitialized && gpus.length() > 0) {
+                        gpus_lenght = gpus.length()
                         gpus = sortMap(const.sortKeys, gpus)
                         addvideocard(gpus)
                         //Header nodeinfo
@@ -587,8 +596,10 @@ class MyDialogFragment(val PC: PC,
                 val params = mutableMapOf("card" to GPUNum.toString())
                 try {
                     responce = getDataFromServer(PC, "get_fan_mode", params)
+                    Log.e("ml", "Responce: $responce")
                     info = JSONObject(responce)
                 } catch (e: Exception) {
+                    Log.e("ml", "error")
                     tvLog.text = e.toString()
                     tvLog.visibility = View.VISIBLE
                 }
@@ -627,12 +638,12 @@ class MyDialogFragment(val PC: PC,
                     }
                 }
             //switch fan mode
-            swFanMode.setOnCheckedChangeListener(CompoundButton.OnCheckedChangeListener { buttonView, isChecked ->
+            swFanMode.setOnClickListener {
                 GlobalScope.launch(Dispatchers.Main) {
-                    if (isChecked) gpuControl(GPUNum, "fan_mode", "auto", PC, binding_d)
+                    if (swFanMode.isChecked) gpuControl(GPUNum, "fan_mode", "auto", PC, binding_d)
                     else gpuControl(GPUNum, "fan_mode", "manual", PC, binding_d)
                 }
-            })
+            }
 
             builder.setView(binding_d.root)
             return builder.create()
@@ -670,6 +681,59 @@ class MyDialogFragment(val PC: PC,
         super.onPause()
         dismiss()
     }
+    }
+
+    suspend fun send_limits(){
+        val pc = PCList[position]
+        val new_limits_one_rig = hashMapOf<String, MutableMap<String, List<Int>>>()
+        limits.forEach { (key, value) ->
+            for (gpuNum in 0 until gpus_lenght) {
+                if ("${pc.name}_${gpuNum}_" in key) {
+                    val new_key = key.drop("${pc.name}_${gpuNum}_".length)
+                        if (new_limits_one_rig.containsKey("$gpuNum")) new_limits_one_rig["$gpuNum"]?.put(new_key, value)
+                    else new_limits_one_rig.put("$gpuNum", mutableMapOf(new_key to value))
+                }
+            }
+            if ("${pc.name}_99999_" in key) {
+                val new_key = key.drop("${pc.name}_${99999}_".length)
+                if (new_limits_one_rig.containsKey("99999")) new_limits_one_rig["99999"]?.put(new_key, value)
+                else new_limits_one_rig.put("99999", mutableMapOf(new_key to value))
+            }
+        }
+        var ip = pc.ex_IP
+        if (pc.ex_IP.isEmpty()) ip = pc.in_IP
+
+        val url = "http://$ip:${pc.port}/control"
+        //create json of pc object
+        val gson: Gson = GsonBuilder().create()
+        var data = mutableMapOf<String, Any>(
+        "ex_IP" to pc.ex_IP,
+        "id" to pc.id,
+        "in_IP" to pc.in_IP,
+        "in_port" to pc.in_port,
+        "name" to pc.name,
+        "port" to pc.port,
+        "upass" to pc.upass,
+        "request" to "send_limits",
+        "value" to new_limits_one_rig)
+
+        val jsondata = gson.toJson(data)
+
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+        val request = Request.Builder()
+            .url(url)
+            .post(jsondata.toRequestBody(mediaType))
+            .build()
+
+        var inf = JSONObject()
+        try {
+            val resp = client.newCall(request).execute()
+            inf = JSONObject(resp.body!!.string())
+        } catch (e: Exception) {
+            inf.put("code", 0)
+            inf.put("text", e.toString())
+        }
+        if (inf.get("code") != 200) addcarderror(inf)
     }
 
     override fun onSaveInstanceState(saveInstanceState: Bundle) {

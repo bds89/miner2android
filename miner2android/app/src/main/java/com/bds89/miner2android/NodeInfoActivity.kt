@@ -33,7 +33,7 @@ class NodeInfoActivity : AppCompatActivity() {
 
     private var position by Delegates.notNull<Int>()
     private val dataModel: DataModel by viewModels()
-
+    var all_notification = hashMapOf<String, MutableMap<String, Int>>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,8 +46,32 @@ class NodeInfoActivity : AppCompatActivity() {
 //        }
 
         //Get from Intent
-        PCList = intent.getSerializableExtra(const.KEY_PCList) as ArrayList<PC>
-        position = intent.getIntExtra(const.KEY_PosNum, 0)
+        val pcl = intent.getSerializableExtra(const.KEY_PCList)
+        if (pcl != null) {
+            PCList = pcl as ArrayList<PC>
+            position = intent.getIntExtra(const.KEY_PosNum, 0)
+            if (intent.getBooleanExtra("from_notification", false)) {
+                //clear notification
+                //try to load all_notification
+                val dir: File = this.filesDir
+                try {
+                    val file = FileInputStream("$dir/${const.KEY_SaveAllNotification}")
+                    val inStream = ObjectInputStream(file)
+                    all_notification = inStream.readObject() as HashMap<String, MutableMap<String, Int>>
+                    inStream.close()
+                    file.close()
+                } catch (e: Exception) { }
+                all_notification.remove(PCList[position].name)
+            //save all_notification
+                try {
+                    val file = FileOutputStream("$dir/${const.KEY_SaveAllNotification}")
+                    val outStream = ObjectOutputStream(file)
+                    outStream.writeObject(all_notification)
+                    outStream.close()
+                } catch (e: Exception) { }
+            }
+        } else PCList = load(const.KEY_SavePC) as ArrayList<PC>
+        if (PCList.size <= position) position = 0
         supportActionBar?.title = PCList[position].name
         //load or create limits
         val limitsLoad = load(const.KEY_SaveLimits)
@@ -175,20 +199,6 @@ class NodeInfoActivity : AppCompatActivity() {
         return false
     }
 
-    //save position
-//    override fun onSaveInstanceState(saveInstanceState: Bundle) {
-//        val i = Intent(this, NodeInfoActivity::class.java).apply {
-//            putExtra(const.KEY_PCList, PCList)
-//            putExtra(const.KEY_PosNum, position)
-//        }
-////        saveInstanceState.putInt("KEY_Position", position)
-//        super.onSaveInstanceState(saveInstanceState)
-//    }
-//    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-//        super.onRestoreInstanceState(savedInstanceState)
-//        position = savedInstanceState?.getInt("KEY_Position")
-//        Log.e("ml", "restore $position")
-//    }
     override fun onBackPressed() {
         val editIntent = Intent()
         editIntent.putExtra(const.KEY_PCList, PCList)

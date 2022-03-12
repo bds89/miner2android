@@ -61,6 +61,13 @@
     <string name="name_unique">Имя должно быть уникальным</string>
     <string name="fan_auto">Автоматическое управление вентилятором</string>
     <string name="apply">Применить</string>
+    <string name="sys_params">Система</string>
+    <string name="no_responce">"Нет отклика в течение </string>
+    <string name="below">ниже</string>
+    <string name="above">выше</string>
+    <string name="load">Загрузить</string>
+    <string name="save_restore_settings">Сохранение/восстановление</string>
+    <string name="include_pcs_limits_for_notification">Список компьютеров и настройки уведомлений</string>
 
 
 </resources>

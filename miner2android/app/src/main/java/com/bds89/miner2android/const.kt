@@ -14,8 +14,12 @@ object const {
     val KEY_SavePC: String = "KEY_SavePC"
     val KEY_SaveSettings: String = "KEY_SaveSettings"
     val KEY_SaveLimits: String = "KEY_SaveLimits"
+    val KEY_SaveLastResponce: String = "KEY_SaveLastResponce"
+    val KEY_SaveAllNotification: String = "KEY_SaveAllNotification"
     val KEY_LIMITS: String = "KEY_LIMITS"
     val KEY_FromNodeInfo: String = "KEY_FromNodeInfo"
+    val NOTIFICATION_ID_LIMITS: Int = 101
+    val CHANNEL_ID_LIMITS: String = "101"
     val ImageIDListOffline: List<String> = listOf(
         "motherboard_offline",
         "processor_offline",
@@ -56,6 +60,7 @@ object const {
         "cpu_temp" to R.string.param_cpu_temp,
         "cpu_freq" to R.string.param_cpu_freq,
         "cpu_fan" to R.string.param_cpu_fan,
+        "sys_params" to R.string.sys_params,
         )
     val iconsofparams: Map<String, Int> = mapOf(
         "hashrate" to R.drawable.hashrate,

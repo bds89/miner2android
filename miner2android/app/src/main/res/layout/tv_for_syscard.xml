@@ -82,7 +82,7 @@
                     android:layout_marginRight="20dp"
                     android:layout_weight="1"
                     android:backgroundTint="@color/text"
-                    android:text="below"
+                    android:text="@string/below"
                     android:textSize="10sp" />
 
                 <Button
@@ -93,7 +93,7 @@
                     android:layout_marginRight="20dp"
                     android:layout_weight="1"
                     android:backgroundTint="@color/text"
-                    android:text="above"
+                    android:text="@string/above"
                     android:textSize="10sp" />
             </LinearLayout>
         </LinearLayout>

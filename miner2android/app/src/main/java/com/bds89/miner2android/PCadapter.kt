@@ -99,7 +99,9 @@ class PCadapter(
             if (p.id > maxID) maxID = p.id
         }
         pc.id = maxID+1
+        var pc_names = mutableListOf<String>()
         PCList.add(pc)
+        PCList.sortBy { PC -> PC.name }
         notifyDataSetChanged()
     }
 
@@ -143,21 +145,26 @@ class PCadapter(
     suspend fun getStatus(pc: PC): String =
         withContext(Dispatchers.IO) {
             var ip = pc.ex_IP
-            if (pc.ex_IP.isEmpty()) ip = pc.in_IP
-            val port = pc.port.toIntOrNull()
-            if (port == null) return@withContext "error url"
+            var port = pc.port
+            if (pc.ex_IP.isEmpty()) {
+                ip = pc.in_IP
+                port = pc.in_port
+            }
+
+            if (port.toIntOrNull() == null) return@withContext "error url"
             val url = "http://$ip:$port/ping"
             //create json of pc object
             val gson: Gson = GsonBuilder().create()
             val jsondata = gson.toJson(pc)
 
             val mediaType = "application/json; charset=utf-8".toMediaType()
-            val request = Request.Builder()
-                .url(url)
-                .post(jsondata.toRequestBody(mediaType))
-                .build()
-
             try {
+                val request = Request.Builder()
+                    .url(url)
+                    .post(jsondata.toRequestBody(mediaType))
+                    .build()
+
+
                 val t1 = System.currentTimeMillis()
                 val responce = client.newCall(request).execute().body!!.string()
                 val info = JSONObject(responce)

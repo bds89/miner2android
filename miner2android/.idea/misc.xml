@@ -13,6 +13,7 @@
         <entry key="app/src/main/res/drawable/ic_baseline_arrow_right_24.xml" value="0.3072916666666667" />
         <entry key="app/src/main/res/drawable/ic_baseline_color_lens_24.xml" value="0.1405" />
         <entry key="app/src/main/res/drawable/ic_baseline_computer_24.xml" value="0.1405" />
+        <entry key="app/src/main/res/drawable/ic_baseline_notifications_24.xml" value="0.2965" />
         <entry key="app/src/main/res/drawable/ic_baseline_settings_24.xml" value="0.1405" />
         <entry key="app/src/main/res/drawable/power.xml" value="0.105" />
         <entry key="app/src/main/res/drawable/share.xml" value="0.105" />
@@ -28,6 +29,8 @@
         <entry key="app/src/main/res/layout/activity_settings.xml" value="0.33" />
         <entry key="app/src/main/res/layout/dialog_lang.xml" value="0.5" />
         <entry key="app/src/main/res/layout/dialog_language.xml" value="0.35625" />
+        <entry key="app/src/main/res/layout/dialog_saveLoad.xml" value="0.33" />
+        <entry key="app/src/main/res/layout/dialog_saveload.xml" value="0.67" />
         <entry key="app/src/main/res/layout/dialog_theme.xml" value="0.5" />
         <entry key="app/src/main/res/layout/dialog_videocard.xml" value="0.33" />
         <entry key="app/src/main/res/layout/dialog_videocard_bg.xml" value="0.2923076923076923" />

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.bds89.miner2android">
+    package="com.bds89.miner2android" >
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -11,26 +11,44 @@
         android:roundIcon="@drawable/mining"
         android:supportsRtl="true"
         android:theme="@style/Theme.Miner2android"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true" >
+        <receiver
+            android:name=".MyBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="com.bds89.miner2android.swipeNotification" />
+            </intent-filter>
+        </receiver>
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.bds89.miner2android.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
+
         <activity
             android:name=".SettingsActivity"
+            android:configChanges="locale"
             android:exported="false"
-            android:parentActivityName=".MainActivity"
-            android:configChanges="locale"/>
+            android:parentActivityName=".MainActivity" />
         <activity
             android:name=".NodeInfoActivity"
+            android:configChanges="locale"
             android:exported="true"
-            android:parentActivityName=".MainActivity"
-            android:configChanges="locale"/>
+            android:parentActivityName=".MainActivity" />
         <activity
             android:name=".itemEditActivity"
+            android:configChanges="locale"
             android:exported="true"
-            android:parentActivityName=".MainActivity"
-            android:configChanges="locale"/>
+            android:parentActivityName=".MainActivity" />
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:configChanges="locale">
+            android:configChanges="locale"
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

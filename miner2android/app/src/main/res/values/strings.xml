@@ -60,4 +60,11 @@
     <string name="name_unique">Name must be unique</string>
     <string name="fan_auto">Fan AUTO</string>
     <string name="apply">Apply</string>
+    <string name="sys_params">System</string>
+    <string name="no_responce">"No response within </string>
+    <string name="below">below</string>
+    <string name="above">above</string>
+    <string name="load">Load</string>
+    <string name="save_restore_settings">Save/Restore settings</string>
+    <string name="include_pcs_limits_for_notification">Include PCs, limits for notification</string>
 </resources>
