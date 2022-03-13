@@ -73,6 +73,7 @@ suspend fun getDataFromServer(pc: PC, req:String, params: MutableMap<String, Str
         return@withContext resp.body!!.string()
     }
 
+@Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
 class NodeInfoFragment : Fragment() {
     private lateinit var binding: FragmentNodeInfoBinding
     private lateinit var PCList: ArrayList<PC>
@@ -527,6 +528,7 @@ class NodeInfoFragment : Fragment() {
         }
     }
     private fun sortMap(sortKeys:Array<String>, forSort: JSONArray): JSONArray {
+        Log.e("ml", forSort.toString())
         var sorted = JSONArray()
         for (i in 0 until forSort.length()) {
             var gpu = forSort.getJSONObject(i) as JSONObject
@@ -537,9 +539,12 @@ class NodeInfoFragment : Fragment() {
                     gpu.remove(key)
                 }
             }
-            val keys: JSONArray = gpu.names()
-            for (i in 0 until keys.length()) {
-                sorted_obj.put(keys.getString(i), gpu.get(keys.getString(i)))
+            Log.e("ml", gpu.toString())
+            if (gpu.length() > 0) {
+                val keys: JSONArray = gpu.names()
+                for (i in 0 until keys.length()) {
+                    sorted_obj.put(keys.getString(i), gpu.get(keys.getString(i)))
+                }
             }
             sorted.put(sorted_obj)
         }
