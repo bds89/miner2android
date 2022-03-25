@@ -1,5 +1,6 @@
 package com.bds89.miner2android
 
+import ZoomOutPageTransformer
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
@@ -96,6 +97,10 @@ class NodeInfoActivity : AppCompatActivity() {
                 super.onPageSelected(pos)
             }
         })
+        viewPager.setPageTransformer(ZoomOutPageTransformer())
+        viewPager.setOffscreenPageLimit(1)
+
+//        viewPager.setOffscreenPageLimit(1)
         menu()
         //observers for save limits, and PCLists
         dataModel.PCList.observe(this) {

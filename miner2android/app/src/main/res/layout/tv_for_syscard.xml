@@ -55,6 +55,35 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/ll_graph"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="visible"
+            android:animateLayoutChanges="true"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/tv_graph_error"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Error"
+                android:textSize="16sp"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <com.jjoe64.graphview.GraphView
+                android:id="@+id/graph"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginTop="10dp"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@+id/ll_sb"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

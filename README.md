@@ -1,8 +1,8 @@
-# Miner2MQTT
+# Miner2Android
 
 Cбор информации с ваших майнинг ферм.
 
-<img src="screenshots/1.png" width="250"> <img src="screenshots/2.png" width="250"> <img src="screenshots/3.png" width="250">
+<img src="screenshots/1.png" width="250"> <img src="screenshots/2.png" width="250"> <img src="screenshots/3.png" width="250"> <img src="screenshots/4.jpg" width="250">
 
 ## Изменения
 
@@ -10,6 +10,11 @@ Cбор информации с ваших майнинг ферм.
   <summary>1.1</summary>
 
 - Уведомления (каждые 15 минут приложение проверяет наличие уведомлений на вашей ферме)
+</details>
+<details>
+  <summary>1.2</summary>
+
+- Графики изменения величин, с момента начала предыдущих суток (необходимо обновление [miner2mqtt](https://github.com/bds89/miner2mqtt))
 </details>
 
 ## Описание

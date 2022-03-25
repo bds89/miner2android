@@ -1,5 +1,6 @@
 package com.bds89.miner2android
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.res.ColorStateList
@@ -8,11 +9,12 @@ import android.graphics.drawable.AnimationDrawable
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AnimationSet
+import android.view.animation.AnimationUtils
 import android.widget.*
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
@@ -26,14 +28,21 @@ import com.bds89.miner2android.databinding.SysteemcardBinding
 import com.bds89.miner2android.databinding.VideocardBinding
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.jjoe64.graphview.DefaultLabelFormatter
+import com.jjoe64.graphview.GraphView
+import com.jjoe64.graphview.series.DataPoint
+import com.jjoe64.graphview.series.LineGraphSeries
+import com.jjoe64.graphview.series.PointsGraphSeries
 import kotlinx.coroutines.*
-import okhttp3.Dispatcher
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlin.math.round
 import kotlin.properties.Delegates
 
@@ -209,7 +218,7 @@ class NodeInfoFragment : Fragment() {
                     } catch (e: Exception) {
                         Toast.makeText(
                             requireContext(),
-                            getString(R.string.no_gpu_info),
+                            "${PCList[position].name} ${getString(R.string.no_gpu_info)}",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -235,7 +244,7 @@ class NodeInfoFragment : Fragment() {
                     } catch (e: Exception) {
                         Toast.makeText(
                             requireContext(),
-                            getString(R.string.no_sys_info),
+                            "${PCList[position].name} ${getString(R.string.no_sys_info)}",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -329,6 +338,8 @@ class NodeInfoFragment : Fragment() {
                     }
                     //Background chose
                     set_value_bg(ll_for_sys_card = ll_for_sys_card, value = value, gpuNum = gpuNum, key = key)
+                    //GraphView
+                    createGraph(PC = PCList[position], tv_for_syscard = tv_for_syscard, pname = key, ptype = "GPU$gpuNum")
                 }
                 tv_value.text = value.toString()
 
@@ -374,6 +385,7 @@ class NodeInfoFragment : Fragment() {
             val s_bar = tv_for_syscard.findViewById(R.id.sb) as SeekBar
             val b_below = tv_for_syscard.findViewById(R.id.b_below) as Button
             val b_above = tv_for_syscard.findViewById(R.id.b_above) as Button
+
             const.iconsofparams[key]?.let { iv_icon.setImageResource(it) }
             if (const.namesofparams.containsKey(key)) tv_properti.text = const.namesofparams[key]?.let { getString(it) }
             else tv_properti.text = key
@@ -389,6 +401,8 @@ class NodeInfoFragment : Fragment() {
                 tuneSeekBar(s_bar = s_bar, value = value, key = key, b_below = b_below, b_above = b_above)
                 //Background chose
                 set_value_bg(ll_for_sys_card = ll_for_sys_card, value = value, key = key)
+                //GraphView
+                createGraph(PC = PCList[position], tv_for_syscard = tv_for_syscard, pname = key, ptype = "sys_params")
             }
 
             tv_value.text = value.toString()
@@ -409,6 +423,10 @@ class NodeInfoFragment : Fragment() {
             swipeContainer.setOnRefreshListener {
                 inflate_cards(true)
                 swipeContainer.isRefreshing = false
+            }
+            ivItemIcon.setOnClickListener {
+                val animationRotateCenter = AnimationUtils.loadAnimation(requireContext(), R.anim.rotate1)
+                ivItemIcon.startAnimation(animationRotateCenter)
             }
         }
     }
@@ -528,7 +546,6 @@ class NodeInfoFragment : Fragment() {
         }
     }
     private fun sortMap(sortKeys:Array<String>, forSort: JSONArray): JSONArray {
-        Log.e("ml", forSort.toString())
         var sorted = JSONArray()
         for (i in 0 until forSort.length()) {
             var gpu = forSort.getJSONObject(i) as JSONObject
@@ -539,7 +556,6 @@ class NodeInfoFragment : Fragment() {
                     gpu.remove(key)
                 }
             }
-            Log.e("ml", gpu.toString())
             if (gpu.length() > 0) {
                 val keys: JSONArray = gpu.names()
                 for (i in 0 until keys.length()) {
@@ -601,10 +617,8 @@ class MyDialogFragment(val PC: PC,
                 val params = mutableMapOf("card" to GPUNum.toString())
                 try {
                     responce = getDataFromServer(PC, "get_fan_mode", params)
-                    Log.e("ml", "Responce: $responce")
                     info = JSONObject(responce)
                 } catch (e: Exception) {
-                    Log.e("ml", "error")
                     tvLog.text = e.toString()
                     tvLog.visibility = View.VISIBLE
                 }
@@ -739,6 +753,121 @@ class MyDialogFragment(val PC: PC,
             inf.put("text", e.toString())
         }
         if (inf.get("code") != 200) addcarderror(inf)
+    }
+
+
+    @SuppressLint("SimpleDateFormat")
+    fun createGraph(PC: PC, tv_for_syscard: View, pname:String, ptype: String) {
+        val params = mutableMapOf("pname" to pname, "ptype" to ptype, "request" to "graph")
+        var answer = "no response"
+        var responce_ = ""
+        var info_ = JSONObject()
+        val tv_graph_error = tv_for_syscard.findViewById(R.id.tv_graph_error) as TextView
+        val graph = tv_for_syscard.findViewById(R.id.graph) as GraphView
+        val tv_properti = tv_for_syscard.findViewById(R.id.tv_properti) as TextView
+        val series: LineGraphSeries<DataPoint> = LineGraphSeries(arrayOf())
+        val seriesPoint = PointsGraphSeries(arrayOf())
+        tv_properti.setOnClickListener {
+            if (graph.visibility == View.GONE && tv_graph_error.visibility == View.GONE) {
+                tv_properti.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.addpcbuttonBG)))
+                GlobalScope.launch(Dispatchers.Main) {
+                    var points = arrayOf<DataPoint>()
+                    var dStart = Date()
+                    var dEnd = Date()
+                    if (!info_.has("code") || info_["code"] != 200) {
+                        try {
+                            responce_ = getDataFromServer(PC, "graph", params)
+                            info_ = JSONObject(responce_)
+                        } catch (e: Exception) {
+                            answer = e.toString()
+                            tv_graph_error.visibility = View.VISIBLE
+                            tv_graph_error.text = answer
+                            graph.visibility = View.GONE
+                            return@launch
+                        }
+                    }
+                    //status code
+                    if (info_["code"] == 200) {
+                        val data = info_.getJSONArray("data")
+                        for (i in 0 until data.length()) {
+
+                            val one_string = data.getJSONArray(i)
+
+                            val formatter: DateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                            val x: Date = formatter.parse(one_string[0].toString())
+                            if (i==0) dStart = x
+                            else dEnd = x
+                            var y = 0.0
+                            var double = one_string[1].toString().toDoubleOrNull()
+                            if (double != null) {
+                                if (double > 1000000) y = round((double) / 10000) / 100
+                                else y = round((double) * 100) / 100
+                            }
+                            points += DataPoint(x, y)
+                        }
+                    } else {
+                        tv_graph_error.visibility = View.VISIBLE
+                        tv_graph_error.text = "code: ${info_["code"]}. ${info_["text"]}"
+                        graph.visibility = View.GONE
+                        return@launch
+                    }
+
+                    series.resetData(points)
+                    series.color = ContextCompat.getColor(requireContext(), R.color.addpcbuttonBG)
+                    graph.addSeries(series)
+                    series.setAnimated(true)
+
+                    //points
+                    graph.addSeries(seriesPoint)
+                    seriesPoint.setShape(PointsGraphSeries.Shape.POINT)
+                    seriesPoint.size = 10F
+                    seriesPoint.color = ContextCompat.getColor(requireContext(), R.color.addpcbuttonBG)
+
+                    // set date label formatter
+                    graph.gridLabelRenderer.labelFormatter = object : DefaultLabelFormatter() {
+                        override fun formatLabel(value: Double, isValueX: Boolean): String {
+                            return if (isValueX) {
+                                // show for x values
+                                val date = Date(value.toLong())
+                                val format = SimpleDateFormat("HH:mm")
+                                val timeString = format.format(date)
+                                val hours = timeString.subSequence(0, 2).toString().toDouble()
+                                val minutes = timeString.subSequence(2, timeString.length).toString()
+                                super.formatLabel(hours, isValueX) + minutes
+                            } else {
+                                // show for y values
+                                super.formatLabel(value, isValueX)
+                            }
+                        }
+                    }
+                    graph.getGridLabelRenderer().setNumHorizontalLabels(4)
+                    // set manual x bounds to have nice steps
+                    graph.getViewport().setMinX(dStart.time.toDouble())
+                    graph.getViewport().setMaxX(dEnd.time.toDouble())
+                    graph.getViewport().setXAxisBoundsManual(true)
+
+                    series.setOnDataPointTapListener { series, dataPoint ->
+                        val format = SimpleDateFormat("HH:mm")
+                        val timeString = format.format(dataPoint.x)
+                        Toast.makeText(
+                            activity,
+                            "$timeString: ${dataPoint.y}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        seriesPoint.resetData(arrayOf(DataPoint(dataPoint.x, dataPoint.y)))
+                    }
+
+                    graph.visibility = View.VISIBLE
+                }
+            } else {
+                graph.visibility = View.GONE
+                tv_graph_error.visibility = View.GONE
+                tv_properti.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.text)))
+                series.resetData(arrayOf())
+                seriesPoint.resetData(arrayOf())
+            }
+        }
     }
 
     override fun onSaveInstanceState(saveInstanceState: Bundle) {

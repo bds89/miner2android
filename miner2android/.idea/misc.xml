@@ -3,6 +3,7 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="../../../../../../../layout/custom_preview.xml" value="0.36816720257234725" />
         <entry key="app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.19739583333333333" />
         <entry key="app/src/main/res/drawable/cpu_freq.xml" value="0.105" />
         <entry key="app/src/main/res/drawable/dialog_videocard_bg.xml" value="0.1405" />
@@ -15,6 +16,7 @@
         <entry key="app/src/main/res/drawable/ic_baseline_computer_24.xml" value="0.1405" />
         <entry key="app/src/main/res/drawable/ic_baseline_notifications_24.xml" value="0.2965" />
         <entry key="app/src/main/res/drawable/ic_baseline_settings_24.xml" value="0.1405" />
+        <entry key="app/src/main/res/drawable/pcitembg.xml" value="0.1405" />
         <entry key="app/src/main/res/drawable/power.xml" value="0.105" />
         <entry key="app/src/main/res/drawable/share.xml" value="0.105" />
         <entry key="app/src/main/res/drawable/temperature.xml" value="0.105" />
@@ -23,6 +25,7 @@
         <entry key="app/src/main/res/drawable/warning_bg0.xml" value="0.1405" />
         <entry key="app/src/main/res/drawable/warning_gradient.xml" value="0.18" />
         <entry key="app/src/main/res/drawable/warning_gradient0.xml" value="0.1405" />
+        <entry key="app/src/main/res/drawable/warning_gradient_verticl.xml" value="0.1405" />
         <entry key="app/src/main/res/layout/activity_item_edit.xml" value="0.22" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.33" />
         <entry key="app/src/main/res/layout/activity_node_info.xml" value="0.33" />
@@ -44,7 +47,7 @@
         <entry key="app/src/main/res/layout/systeemcard.xml" value="0.33" />
         <entry key="app/src/main/res/layout/systeemcard_tv.xml" value="0.5" />
         <entry key="app/src/main/res/layout/tv.xml" value="0.5" />
-        <entry key="app/src/main/res/layout/tv_for_syscard.xml" value="0.5" />
+        <entry key="app/src/main/res/layout/tv_for_syscard.xml" value="0.33" />
         <entry key="app/src/main/res/layout/videocard.xml" value="0.5" />
         <entry key="app/src/main/res/menu/abar_item_edit.xml" value="0.18" />
         <entry key="app/src/main/res/menu/abar_menu.xml" value="0.35572916666666665" />

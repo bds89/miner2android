@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:drawable="@color/pcitembg"
+        android:duration="0"/>
+
+    <item android:drawable="@drawable/warning_gradient_verticl"
+        android:duration="1000"/>
+
+</animation-list>

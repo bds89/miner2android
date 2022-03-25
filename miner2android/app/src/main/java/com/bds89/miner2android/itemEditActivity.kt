@@ -1,5 +1,6 @@
 package com.bds89.miner2android
 
+import DepthPageTransformer
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Build
@@ -71,7 +72,7 @@ class itemEditActivity : AppCompatActivity() {
             viewPager.currentItem = pc.imageID
             image_num_in_fragment = pc.imageID
         }
-
+        viewPager.setPageTransformer(DepthPageTransformer())
 
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
