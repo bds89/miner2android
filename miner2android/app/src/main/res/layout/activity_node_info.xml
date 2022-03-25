@@ -11,7 +11,7 @@
         android:id="@+id/pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/bg_main"
+        android:background="@color/BG"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -21,7 +21,7 @@
         android:layout_width="230dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@drawable/bg_main"
+        android:background="@color/BG"
         android:orientation="vertical">
 
         <ScrollView

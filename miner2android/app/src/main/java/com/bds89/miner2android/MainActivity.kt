@@ -12,6 +12,8 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.animation.AnimationUtils
+import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -165,8 +167,8 @@ class MainActivity : AppCompatActivity() {
             PCadapter = PCadapter(
                 PCList = PCList,
                 optionsMenuClickListener = object : PCadapter.OptionsMenuClickListener {
-                    override fun onOptionsMenuClicked(position: Int): Boolean {
-                        return performOptionsMenuClick(position)
+                    override fun onOptionsMenuClicked(position: Int, ivPC: ImageView): Boolean {
+                        return performOptionsMenuClick(position, ivPC)
                     }
                 },
                 itemClickListener = object : PCadapter.ItemClickListener {
@@ -203,7 +205,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     //Item menu
-    private fun performOptionsMenuClick(position: Int): Boolean {
+    private fun performOptionsMenuClick(position: Int, ivPC: ImageView): Boolean {
+        val animationRotateCenter = AnimationUtils.loadAnimation(this, R.anim.rotate1)
+        ivPC.startAnimation(animationRotateCenter)
         val popupMenu = PopupMenu(this, binding.PCRecycler[position].findViewById(R.id.tv_menu))
         popupMenu.inflate(R.menu.item_menu)
         popupMenu.setOnMenuItemClickListener(object : PopupMenu.OnMenuItemClickListener {

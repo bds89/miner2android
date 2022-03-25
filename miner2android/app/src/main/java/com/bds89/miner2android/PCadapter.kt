@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bds89.miner2android.databinding.PcItemBinding
@@ -32,7 +33,7 @@ class PCadapter(
     var overload_limits_names = arrayListOf<String>()
 
     interface OptionsMenuClickListener {
-        fun onOptionsMenuClicked(position: Int): Boolean
+        fun onOptionsMenuClicked(position: Int, ivPc: ImageView): Boolean
     }
 
     interface ItemClickListener {
@@ -79,27 +80,27 @@ class PCadapter(
                         )
                     }
                 //if limits, change background
-                cvItem.background = ContextCompat.getDrawable(context, R.drawable.pcitembg)
-                if (overload_limits_names.contains(PCList[position].name)) {
-                    val animationDrawable: AnimationDrawable = cvItem.background as AnimationDrawable
-                    animationDrawable.setEnterFadeDuration(1000)
-                    animationDrawable.setExitFadeDuration(1000)
-                    animationDrawable.isOneShot = true
-                    animationDrawable.start()
-                    overload_limits_names.remove(PCList[position].name)
-                }
+//                cvItem.background = ContextCompat.getDrawable(context, R.drawable.pcitembg)
+//                if (overload_limits_names.contains(PCList[position].name)) {
+//                    val animationDrawable: AnimationDrawable = cvItem.background as AnimationDrawable
+//                    animationDrawable.setEnterFadeDuration(1000)
+//                    animationDrawable.setExitFadeDuration(1000)
+//                    animationDrawable.isOneShot = true
+//                    animationDrawable.start()
+//                    overload_limits_names.remove(PCList[position].name)
+//                }
                 tvTitle.text = PCList[position].name
                 tvStatus.text = PCList[position].status
                 ivPc.setOnClickListener(){
                     itemClickListener.itemClicked(position)
                 }
                 tvMenu.setOnClickListener {
-                    optionsMenuClickListener.onOptionsMenuClicked(position)
+                    optionsMenuClickListener.onOptionsMenuClicked(position, ivPc)
 
 
                 }
                 ivPc.setOnLongClickListener {
-                    optionsMenuClickListener.onOptionsMenuClicked(position)
+                    optionsMenuClickListener.onOptionsMenuClicked(position, ivPc)
                 }
             }
         }

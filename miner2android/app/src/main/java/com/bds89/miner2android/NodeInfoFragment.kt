@@ -840,7 +840,7 @@ class MyDialogFragment(val PC: PC,
                             }
                         }
                     }
-                    graph.getGridLabelRenderer().setNumHorizontalLabels(4)
+                    graph.getGridLabelRenderer().setNumHorizontalLabels(3)
                     // set manual x bounds to have nice steps
                     graph.getViewport().setMinX(dStart.time.toDouble())
                     graph.getViewport().setMaxX(dEnd.time.toDouble())
