@@ -2,7 +2,9 @@
 
 Cбор информации с ваших майнинг ферм.
 
-<img src="screenshots/1.png" width="250"> <img src="screenshots/2.png" width="250"> <img src="screenshots/3.png" width="250"> <img src="screenshots/4.jpg" width="250">
+<img src="screenshots/1.png" width="300"> <img src="screenshots/2.png" width="300"> 
+
+<img src="screenshots/3.png" width="300"> <img src="screenshots/4.jpg" width="300">
 
 ## Изменения
 
@@ -69,4 +71,4 @@ APP: #(не обязательно, если используете только
 ```
 
 ## Планы
-- Графики изменения величин
+- Добавление мониторинга фермы с Chia (возможно будет отдельный проект)
