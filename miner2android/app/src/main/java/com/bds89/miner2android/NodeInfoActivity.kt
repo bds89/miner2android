@@ -98,7 +98,7 @@ class NodeInfoActivity : AppCompatActivity() {
             }
         })
         viewPager.setPageTransformer(ZoomOutPageTransformer())
-        viewPager.setOffscreenPageLimit(1)
+//        viewPager.setOffscreenPageLimit(1)
 
 //        viewPager.setOffscreenPageLimit(1)
         menu()
@@ -109,6 +109,7 @@ class NodeInfoActivity : AppCompatActivity() {
         }
         dataModel.limits.observe(this) {
             limits = it
+            save(limits, const.KEY_SaveLimits)
         }
     }
 
@@ -207,8 +208,7 @@ class NodeInfoActivity : AppCompatActivity() {
     override fun onBackPressed() {
         val editIntent = Intent()
         editIntent.putExtra(const.KEY_PCList, PCList)
-        setResult(AppCompatActivity.RESULT_OK, editIntent)
-        save(limits, const.KEY_SaveLimits)
+        setResult(RESULT_OK, editIntent)
         finish()
         super.onBackPressed()
     }
