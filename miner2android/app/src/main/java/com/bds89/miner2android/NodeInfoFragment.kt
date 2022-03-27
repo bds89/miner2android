@@ -1,6 +1,5 @@
 package com.bds89.miner2android
 
-import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.res.ColorStateList
@@ -13,7 +12,6 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AnimationSet
 import android.view.animation.AnimationUtils
 import android.widget.*
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -30,6 +28,8 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.jjoe64.graphview.DefaultLabelFormatter
 import com.jjoe64.graphview.GraphView
+import com.jjoe64.graphview.ValueDependentColor
+import com.jjoe64.graphview.series.BarGraphSeries
 import com.jjoe64.graphview.series.DataPoint
 import com.jjoe64.graphview.series.LineGraphSeries
 import com.jjoe64.graphview.series.PointsGraphSeries
@@ -112,6 +112,10 @@ class NodeInfoFragment : Fragment() {
     ): View? {
         binding = FragmentNodeInfoBinding.inflate(inflater)
         setHasOptionsMenu(true)
+        //for animation true
+        val viewGroup: ViewGroup = binding.linerMain
+        viewGroup.layoutTransition.setAnimateParentHierarchy(false)
+
         return binding.root
     }
 
@@ -231,7 +235,12 @@ class NodeInfoFragment : Fragment() {
                             try {
                                 tvGpuTotal.text = info.getJSONObject("data")["gpu_total"].toString()
                                 val hash = info.getJSONObject("data")["hashrate"].toString().toDoubleOrNull()
-                                if (hash != null) tvNodeHash.text = (round((hash / 10000)) / 100).toString()
+                                if (hash != null) {
+                                    tvNodeHash.text = (round((hash / 10000)) / 100).toString()
+                                    tvNodeHashText.setOnClickListener {
+                                        createGraphMain(PCList[position], graphMain, info, tvNodeHashText)
+                                    }
+                                }
                             } catch (e: Exception) {
                                 tvGpuTotal.text = ""
                                 tvNodeHash.text = ""
@@ -755,8 +764,122 @@ class MyDialogFragment(val PC: PC,
         if (inf.get("code") != 200) addcarderror(inf)
     }
 
+    fun createGraphMain(PC:PC, graphMain:GraphView, info:JSONObject, tvNodeHashText:TextView) {
+        val params = mutableMapOf("pname" to "hashrate", "ptype" to "main", "request" to "graph")
+        var responce_ = ""
+        var info_ = JSONObject()
 
-    @SuppressLint("SimpleDateFormat")
+        val series: BarGraphSeries<DataPoint> = BarGraphSeries(arrayOf())
+        val seriesPoint = PointsGraphSeries(arrayOf())
+
+        if (graphMain.visibility == View.GONE) {
+            tvNodeHashText.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.addpcbuttonBG)))
+            GlobalScope.launch(Dispatchers.Main) {
+                var points = arrayOf<DataPoint>()
+                if (!info_.has("code") || info_["code"] != 200) {
+                    try {
+                        responce_ = getDataFromServer(PC, "graph", params)
+                        info_ = JSONObject(responce_)
+                    } catch (e: Exception) {
+                        tvNodeHashText.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.text)))
+                        return@launch
+                    }
+                }
+                //status code
+                if (info_["code"] == 200) {
+                    val data = info_.getJSONArray("data")
+                    val cal = Calendar.getInstance()
+                    var Hour = 24
+                    var SummHash = 0.0
+                    var AVGNum = 0
+                    for (i in 0 until data.length()) {
+                        //create points for every hour
+                        val one_string = data.getJSONArray(i)
+                        val formatter: DateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                        val oneData: Date = formatter.parse(one_string[0].toString())
+                        cal.time = oneData
+                        val hour = cal.get(Calendar.HOUR_OF_DAY)
+                        if (Hour==24 || Hour == hour) {
+                            Hour = hour
+                            var double = one_string[1].toString().toDoubleOrNull()
+                            if (double != null) {
+                                SummHash += double
+                                AVGNum += 1
+                            }
+                        } else {
+                            var double = SummHash/AVGNum
+                            if (double > 1000000) double = round((double) / 10000) / 100
+                            else double = round((double) * 100) / 100
+                            points += DataPoint(oneData, double)
+
+                            SummHash = 0.0
+                            AVGNum = 0
+                            Hour = hour
+                        }
+                    }
+                } else {
+                    tvNodeHashText.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.text)))
+                    return@launch
+                }
+
+                series.resetData(points)
+                series.color = ContextCompat.getColor(requireContext(), R.color.addpcbuttonBG)
+                graphMain.addSeries(series)
+                series.setSpacing(0)
+                series.setAnimated(false)
+
+                //points
+                graphMain.addSeries(seriesPoint)
+                seriesPoint.setShape(PointsGraphSeries.Shape.POINT)
+                seriesPoint.size = 10F
+                seriesPoint.color = ContextCompat.getColor(requireContext(), R.color.addpcbuttonBG)
+
+                // set date label formatter
+                graphMain.gridLabelRenderer.labelFormatter = object : DefaultLabelFormatter() {
+                    override fun formatLabel(value: Double, isValueX: Boolean): String {
+                        return if (isValueX) {
+                            // show for x values
+                            val date = Date(value.toLong())
+                            val format = SimpleDateFormat("HH:mm")
+                            val timeString = format.format(date)
+                            val hours = timeString.subSequence(0, 2).toString().toDouble()
+                            val minutes = timeString.subSequence(2, timeString.length).toString()
+                            super.formatLabel(hours, isValueX) + minutes
+                        } else {
+                            // show for y values
+                            super.formatLabel(value, isValueX)
+                        }
+                    }
+                }
+                graphMain.getGridLabelRenderer().setNumHorizontalLabels(3)
+                // set manual x bounds to have nice steps
+                val dStart = points[0].x
+                val dEnd = points[points.size -1].x
+                graphMain.getViewport().setMinX(dStart)
+                graphMain.getViewport().setMaxX(dEnd)
+                graphMain.getViewport().setXAxisBoundsManual(true)
+
+                series.setOnDataPointTapListener { series, dataPoint ->
+                    val format = SimpleDateFormat("HH:mm")
+                    val timeString = format.format(dataPoint.x)
+                    Toast.makeText(
+                        activity,
+                        "$timeString: ${dataPoint.y}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    seriesPoint.resetData(arrayOf(DataPoint(dataPoint.x, dataPoint.y)))
+                }
+
+                graphMain.visibility = View.VISIBLE
+            }
+        } else {
+            graphMain.visibility = View.GONE
+            tvNodeHashText.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.text)))
+            series.resetData(arrayOf())
+            seriesPoint.resetData(arrayOf())
+        }
+    }
+
     fun createGraph(PC: PC, tv_for_syscard: View, pname:String, ptype: String) {
         val params = mutableMapOf("pname" to pname, "ptype" to ptype, "request" to "graph")
         var answer = "no response"
