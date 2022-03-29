@@ -2,6 +2,7 @@ package com.bds89.miner2android
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import org.json.JSONObject
 
 open class DataModel : ViewModel() {
     val limits: MutableLiveData<HashMap<String, MutableList<Int>>> by lazy {

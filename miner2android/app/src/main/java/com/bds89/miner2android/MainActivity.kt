@@ -177,6 +177,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 })
             PCRecycler.adapter = PCadapter
+            PCRecycler.animation
 
             //button add pc
             btAdd.setOnClickListener {

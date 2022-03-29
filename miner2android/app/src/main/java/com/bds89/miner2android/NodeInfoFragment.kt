@@ -8,6 +8,7 @@ import android.graphics.drawable.AnimationDrawable
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
@@ -20,10 +21,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LifecycleOwner
-import com.bds89.miner2android.databinding.DialogVideocardBinding
-import com.bds89.miner2android.databinding.FragmentNodeInfoBinding
-import com.bds89.miner2android.databinding.SysteemcardBinding
-import com.bds89.miner2android.databinding.VideocardBinding
+import com.bds89.miner2android.databinding.*
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.jjoe64.graphview.DefaultLabelFormatter
@@ -103,7 +101,7 @@ class NodeInfoFragment : Fragment() {
     private var responce_from_ViewModel = mutableMapOf<Int, String>()
 
     private var gpus_lenght:Int = 0
-//    private var resonce_time = 0L
+    private var gpu_created = false
 
 
     override fun onCreateView(
@@ -116,7 +114,7 @@ class NodeInfoFragment : Fragment() {
         val viewGroup: ViewGroup = binding.linerMain
         viewGroup.layoutTransition.setAnimateParentHierarchy(false)
 
-        return binding.root
+         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -126,13 +124,13 @@ class NodeInfoFragment : Fragment() {
             PCList = getSerializable(const.KEY_PCList) as ArrayList<PC>
             limits = getSerializable(const.KEY_LIMITS) as HashMap<String, MutableList<Int>>
 
-        binding.ivItemIcon.setImageResource(
-            resources.getIdentifier(
-                const.ImageIDListOnline[PCList[position].imageID],
-                "drawable",
-                requireContext().packageName
+            binding.ivItemIcon.setImageResource(
+                resources.getIdentifier(
+                    const.ImageIDListOnline[PCList[position].imageID],
+                    "drawable",
+                    requireContext().packageName
+                )
             )
-        )
         }
         init()
         inflate_cards()
@@ -179,71 +177,85 @@ class NodeInfoFragment : Fragment() {
     }
 
     private fun inflate_cards(clear:Boolean=false) {
-        GlobalScope.launch(Dispatchers.Main) {
-            binding.pbMain.visibility = View.VISIBLE
+        binding.pbMain.visibility = View.VISIBLE
 //clear old cards
-            if (clear && this@NodeInfoFragment::all_cards_ids.isInitialized) {
-                for (id in all_cards_ids) {
-                    val view_for_dell: View = requireView().findViewById(id)
-                    val parent = view_for_dell.parent as ViewGroup
-                    parent.removeView(view_for_dell)
-                }
-                all_cards_ids = mutableListOf()
-            } else all_cards_ids = mutableListOf()
-            if (responce_from_ViewModel.isNullOrEmpty() ||
-                !responce_from_ViewModel.containsKey(position) ||
-                (responce_from_ViewModel.containsKey(position) && responce_from_ViewModel.get(position).isNullOrEmpty())) {
-                //get data from server
-                try {
-                    responce = getDataFromServer(PCList[position], "refresh")
-                    info = JSONObject(responce)
-                } catch (e: Exception) {
-                    val info = JSONObject()
-                    info.put("code", 0)
-                    info.put("text", e.toString())
-                    addcarderror(info)
-                }
-            } else {
-               // get data from ViewModel
+        if (clear && this@NodeInfoFragment::all_cards_ids.isInitialized) {
+            for (id in all_cards_ids) {
+                val view_for_dell: View = requireView().findViewById(id)
+                val parent = view_for_dell.parent as ViewGroup
+                parent.removeView(view_for_dell)
+                parent.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.cards_out))
+            }
+            all_cards_ids = mutableListOf()
+        } else all_cards_ids = mutableListOf()
+        GlobalScope.launch {
+        if (responce_from_ViewModel.isNullOrEmpty() ||
+            !responce_from_ViewModel.containsKey(position) ||
+            (responce_from_ViewModel.containsKey(position) && responce_from_ViewModel.get(position).isNullOrEmpty())) {
+            //get data from server
+                GlobalScope.launch(Dispatchers.IO) {
+                    try {
+                        responce = getDataFromServer(PCList[position], "refresh")
+                        info = JSONObject(responce)
+                    } catch (e: Exception) {
+                        val info = JSONObject()
+                        info.put("code", 0)
+                        info.put("text", e.toString())
+                        addcarderror(info)
+                    }
+                }.join()
+        } else {
+            GlobalScope.launch(Dispatchers.Main) {
+                // get data from ViewModel
                 responce = responce_from_ViewModel.get(position).toString()
                 responce_from_ViewModel.remove(position)
                 dataModel.responce.value = responce_from_ViewModel
                 info = JSONObject(responce)
             }
+        }
             if (this@NodeInfoFragment::info.isInitialized) {
                 //status code
                 if (info["code"] == 200) {
-//                    //wait complete viewpager animation
-//                    val sleep_time = (System.currentTimeMillis() - resonce_time)
-//                    if (sleep_time < 350L) Thread.sleep((350L-sleep_time))
                     //GPU parameters
                     try {
                         gpus = info.getJSONObject("data").getJSONArray("gpus")
                     } catch (e: Exception) {
-                        Toast.makeText(
-                            requireContext(),
-                            "${PCList[position].name} ${getString(R.string.no_gpu_info)}",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        GlobalScope.launch(Dispatchers.Main) {
+                            Toast.makeText(
+                                requireContext(),
+                                "${PCList[position].name} ${getString(R.string.no_gpu_info)}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            gpu_created = true
+                        }
                     }
                     if (this@NodeInfoFragment::gpus.isInitialized && gpus.length() > 0) {
                         gpus_lenght = gpus.length()
                         gpus = sortMap(const.sortKeys, gpus)
-                        addvideocard(gpus)
-                        //Header nodeinfo
-                        with(binding) {
-                            try {
-                                tvGpuTotal.text = info.getJSONObject("data")["gpu_total"].toString()
-                                val hash = info.getJSONObject("data")["hashrate"].toString().toDoubleOrNull()
-                                if (hash != null) {
-                                    tvNodeHash.text = (round((hash / 10000)) / 100).toString()
-                                    tvNodeHashText.setOnClickListener {
-                                        createGraphMain(PCList[position], graphMain, info, tvNodeHashText)
+                        GlobalScope.launch(Dispatchers.Main) {
+                            addvideocard(gpus)
+                            //Header nodeinfo
+                            with(binding) {
+                                try {
+                                    tvGpuTotal.text =
+                                        info.getJSONObject("data")["gpu_total"].toString()
+                                    val hash = info.getJSONObject("data")["hashrate"].toString()
+                                        .toDoubleOrNull()
+                                    if (hash != null) {
+                                        tvNodeHash.text = (round((hash / 10000)) / 100).toString()
+                                        tvNodeHashText.setOnClickListener {
+                                            createGraphMain(
+                                                PCList[position],
+                                                graphMain,
+                                                info,
+                                                tvNodeHashText
+                                            )
+                                        }
                                     }
+                                } catch (e: Exception) {
+                                    tvGpuTotal.text = ""
+                                    tvNodeHash.text = ""
                                 }
-                            } catch (e: Exception) {
-                                tvGpuTotal.text = ""
-                                tvNodeHash.text = ""
                             }
                         }
                     }
@@ -257,10 +269,11 @@ class NodeInfoFragment : Fragment() {
                             Toast.LENGTH_SHORT
                         ).show()
                     }
-                    if (this@NodeInfoFragment::sys_params.isInitialized) addcardsystem(sys_params)
-                } else addcarderror(info)
-                binding.pbMain.visibility = View.GONE
+                    GlobalScope.launch(Dispatchers.Main) { if (this@NodeInfoFragment::sys_params.isInitialized) addcardsystem(sys_params) }
+                } else
+                    GlobalScope.launch(Dispatchers.Main) { addcarderror(info) }
             }
+            GlobalScope.launch(Dispatchers.Main) { binding.pbMain.visibility = View.GONE }
         }
     }
 
@@ -298,7 +311,7 @@ class NodeInfoFragment : Fragment() {
 
     }
 
-    private fun addvideocard(gpus: JSONArray) {
+    suspend fun addvideocard(gpus: JSONArray) {
         hidden_params = mutableListOf<Int>()
 //        gpus.put(gpus.getJSONObject(0))
         for (gpuNum in 0 until gpus.length()) {
@@ -306,6 +319,7 @@ class NodeInfoFragment : Fragment() {
             val videocardbinding = VideocardBinding.inflate(layoutInflater)
             val keys: JSONArray = gpu.names()
             for (i in 0 until keys.length()) {
+                delay(5)
                 val key = keys[i] as String
                 var value = gpu[key]
 
@@ -318,18 +332,32 @@ class NodeInfoFragment : Fragment() {
                     continue
                 }
 
-                val tv_for_syscard = LayoutInflater.from(requireContext()).inflate(R.layout.tv_for_syscard, null, false)
-
-                val ll_for_sys_card = tv_for_syscard.findViewById(R.id.ll_for_sys_card) as ConstraintLayout
-                val ll_for_card_vert = tv_for_syscard.findViewById(R.id.ll_for_card_vert) as LinearLayout
+                val sysBinding = TvForSyscardBinding.inflate(layoutInflater)
+                val tv_for_syscard = sysBinding.root
+                val ll_for_sys_card = sysBinding.llForSysCard
+                val ll_for_card_vert = sysBinding.llForCardVert
                 ll_for_card_vert.id = View.generateViewId()
-                val tv_properti = tv_for_syscard.findViewById(R.id.tv_properti) as TextView
-                val tv_value = tv_for_syscard.findViewById(R.id.tv_value) as TextView
-                val iv_icon = tv_for_syscard.findViewById(R.id.iv_icon) as ImageView
-                val ll_sb = tv_for_syscard.findViewById(R.id.ll_sb) as LinearLayout
-                val s_bar = tv_for_syscard.findViewById(R.id.sb) as SeekBar
-                val b_below = tv_for_syscard.findViewById(R.id.b_below) as Button
-                val b_above = tv_for_syscard.findViewById(R.id.b_above) as Button
+                val tv_properti = sysBinding.tvProperti
+                val tv_value = sysBinding.tvValue
+                val iv_icon = sysBinding.ivIcon
+                val ll_sb = sysBinding.llSb
+                val s_bar = sysBinding.sb
+                val b_below = sysBinding.bBelow
+                val b_above = sysBinding.bAbove
+
+//                val tv_for_syscard = LayoutInflater.from(requireContext()).inflate(R.layout.tv_for_syscard, null, false)
+
+//                val ll_for_sys_card = tv_for_syscard.findViewById(R.id.ll_for_sys_card) as ConstraintLayout
+//                val ll_for_card_vert = tv_for_syscard.findViewById(R.id.ll_for_card_vert) as LinearLayout
+//                ll_for_card_vert.id = View.generateViewId()
+//                val tv_properti = tv_for_syscard.findViewById(R.id.tv_properti) as TextView
+//                val tv_value = tv_for_syscard.findViewById(R.id.tv_value) as TextView
+//                val iv_icon = tv_for_syscard.findViewById(R.id.iv_icon) as ImageView
+//                val ll_sb = tv_for_syscard.findViewById(R.id.ll_sb) as LinearLayout
+//                val s_bar = tv_for_syscard.findViewById(R.id.sb) as SeekBar
+//                val b_below = tv_for_syscard.findViewById(R.id.b_below) as Button
+//                val b_above = tv_for_syscard.findViewById(R.id.b_above) as Button
+
                 const.iconsofparams[key]?.let { iv_icon.setImageResource(it) }
                 if (const.namesofparams.containsKey(key)) tv_properti.text = const.namesofparams[key]?.let { getString(it) }
                 else tv_properti.text = key
@@ -364,36 +392,55 @@ class NodeInfoFragment : Fragment() {
                 (cardView.getParent() as ViewGroup).removeView(cardView)
             }
             //dialog videocard
-            dialog_videocard = MyDialogFragment(PCList[position], gpu, gpuNum)
-            val manager = requireActivity().supportFragmentManager
+
             videocardbinding.imageView.setOnClickListener {
+                dialog_videocard = MyDialogFragment(PCList[position], gpu, gpuNum)
+                val manager = requireActivity().supportFragmentManager
                 dialog_videocard.dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                 dialog_videocard.show(manager, "videocardDialog") }
 
             cardView.id = View.generateViewId()
             all_cards_ids.add(cardView.id)
+            //animation
+            cardView.animation =
+                AnimationUtils.loadAnimation(requireContext(), R.anim.cards)
             binding.linerMain.addView(cardView)
         }
+        gpu_created = true
     }
 
 
-    private fun addcardsystem(sys_params: JSONObject) {
+    suspend fun addcardsystem(sys_params: JSONObject) {
         //add cardview
         val syscardbinding = SysteemcardBinding.inflate(layoutInflater)
         val keys: JSONArray = sys_params.names()
+        while (!gpu_created) delay(200)
         for (i in 0 until keys.length()) {
             val key = keys[i] as String
             var value = sys_params[key]
 
-            val tv_for_syscard = LayoutInflater.from(requireContext()).inflate(R.layout.tv_for_syscard, null, false)
-            val ll_for_sys_card = tv_for_syscard.findViewById(R.id.ll_for_sys_card) as ConstraintLayout
-            val tv_properti = tv_for_syscard.findViewById(R.id.tv_properti) as TextView
-            val tv_value = tv_for_syscard.findViewById(R.id.tv_value) as TextView
-            val iv_icon = tv_for_syscard.findViewById(R.id.iv_icon) as ImageView
-            val ll_sb = tv_for_syscard.findViewById(R.id.ll_sb) as LinearLayout
-            val s_bar = tv_for_syscard.findViewById(R.id.sb) as SeekBar
-            val b_below = tv_for_syscard.findViewById(R.id.b_below) as Button
-            val b_above = tv_for_syscard.findViewById(R.id.b_above) as Button
+            val sysBinding = TvForSyscardBinding.inflate(layoutInflater)
+            val tv_for_syscard = sysBinding.root
+
+            val ll_for_sys_card = sysBinding.llForSysCard
+            val tv_properti = sysBinding.tvProperti
+            val tv_value = sysBinding.tvValue
+            val iv_icon = sysBinding.ivIcon
+            val ll_sb = sysBinding.llSb
+            val s_bar = sysBinding.sb
+            val b_below = sysBinding.bBelow
+            val b_above = sysBinding.bAbove
+
+//            val tv_for_syscard = LayoutInflater.from(requireContext()).inflate(R.layout.tv_for_syscard, null, false)
+
+//            val ll_for_sys_card = tv_for_syscard.findViewById(R.id.ll_for_sys_card) as ConstraintLayout
+//            val tv_properti = tv_for_syscard.findViewById(R.id.tv_properti) as TextView
+//            val tv_value = tv_for_syscard.findViewById(R.id.tv_value) as TextView
+//            val iv_icon = tv_for_syscard.findViewById(R.id.iv_icon) as ImageView
+//            val ll_sb = tv_for_syscard.findViewById(R.id.ll_sb) as LinearLayout
+//            val s_bar = tv_for_syscard.findViewById(R.id.sb) as SeekBar
+//            val b_below = tv_for_syscard.findViewById(R.id.b_below) as Button
+//            val b_above = tv_for_syscard.findViewById(R.id.b_above) as Button
 
             const.iconsofparams[key]?.let { iv_icon.setImageResource(it) }
             if (const.namesofparams.containsKey(key)) tv_properti.text = const.namesofparams[key]?.let { getString(it) }
@@ -425,7 +472,11 @@ class NodeInfoFragment : Fragment() {
         }
         cardView.id = View.generateViewId()
         all_cards_ids.add(cardView.id)
+        //animation
+        cardView.animation =
+            AnimationUtils.loadAnimation(requireContext(), R.anim.cards)
         binding.linerMain.addView(cardView)
+        gpu_created = false
     }
     private fun init() {
         binding.apply {
@@ -437,6 +488,9 @@ class NodeInfoFragment : Fragment() {
                 val animationRotateCenter = AnimationUtils.loadAnimation(requireContext(), R.anim.rotate1)
                 ivItemIcon.startAnimation(animationRotateCenter)
             }
+            //animation
+            linearLayout.animation =
+                AnimationUtils.loadAnimation(requireContext(), R.anim.cards)
         }
     }
 
@@ -881,16 +935,17 @@ class MyDialogFragment(val PC: PC,
     }
 
     fun createGraph(PC: PC, tv_for_syscard: View, pname:String, ptype: String) {
-        val params = mutableMapOf("pname" to pname, "ptype" to ptype, "request" to "graph")
-        var answer = "no response"
-        var responce_ = ""
-        var info_ = JSONObject()
-        val tv_graph_error = tv_for_syscard.findViewById(R.id.tv_graph_error) as TextView
-        val graph = tv_for_syscard.findViewById(R.id.graph) as GraphView
         val tv_properti = tv_for_syscard.findViewById(R.id.tv_properti) as TextView
-        val series: LineGraphSeries<DataPoint> = LineGraphSeries(arrayOf())
-        val seriesPoint = PointsGraphSeries(arrayOf())
         tv_properti.setOnClickListener {
+            val params = mutableMapOf("pname" to pname, "ptype" to ptype, "request" to "graph")
+            var answer = "no response"
+            var responce_ = ""
+            var info_ = JSONObject()
+            val tv_graph_error = tv_for_syscard.findViewById(R.id.tv_graph_error) as TextView
+            val graph = tv_for_syscard.findViewById(R.id.graph) as GraphView
+            val series: LineGraphSeries<DataPoint> = LineGraphSeries(arrayOf())
+            val seriesPoint = PointsGraphSeries(arrayOf())
+
             if (graph.visibility == View.GONE && tv_graph_error.visibility == View.GONE) {
                 tv_properti.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.addpcbuttonBG)))
                 GlobalScope.launch(Dispatchers.Main) {

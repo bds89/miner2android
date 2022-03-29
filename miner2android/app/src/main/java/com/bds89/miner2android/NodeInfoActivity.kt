@@ -41,11 +41,6 @@ class NodeInfoActivity : AppCompatActivity() {
         binding = ActivityNodeInfoBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-//        if (savedInstanceState != null) {
-//            position = savedInstanceState.getInt("KEY_Position")
-//            Log.e("ml", "restore on create $position")
-//        }
-
         //Get from Intent
         val pcl = intent.getSerializableExtra(const.KEY_PCList)
         if (pcl != null) {
@@ -89,18 +84,13 @@ class NodeInfoActivity : AppCompatActivity() {
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(pos: Int) {
                 supportActionBar?.title = PCList[pos].name
-                position = pos
-                intent.putExtra(const.KEY_PCList, PCList)
-                intent.putExtra(const.KEY_PosNum, pos)
                 invalidateOptionsMenu()
                 menu()
                 super.onPageSelected(pos)
             }
         })
         viewPager.setPageTransformer(ZoomOutPageTransformer())
-//        viewPager.setOffscreenPageLimit(1)
 
-//        viewPager.setOffscreenPageLimit(1)
         menu()
         //observers for save limits, and PCLists
         dataModel.PCList.observe(this) {

@@ -14,7 +14,6 @@
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         android:backgroundTintMode="src_atop"
-        app:cardBackgroundColor="@color/pcitembg"
         app:cardCornerRadius="6dp"
         app:cardElevation="4dp"
         app:cardMaxElevation="4dp"
@@ -25,14 +24,15 @@
         app:layout_constraintVertical_bias="0.0">
 
         <LinearLayout
+            android:id="@+id/ll_pcitem"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_margin="3dp"
+            android:background="@drawable/pcitembg"
             android:orientation="vertical">
 
             <ImageView
                 android:id="@+id/iv_pc"
-                android:layout_width="100dp"
+                android:layout_width="match_parent"
                 android:layout_height="100dp"
                 android:layout_gravity="center|center_horizontal"
                 android:layout_marginTop="5dp"
@@ -50,6 +50,7 @@
                     android:id="@+id/tv_title"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
+                    android:layout_marginLeft="3dp"
                     android:layout_weight="1"
                     android:gravity="center|left"
                     android:text="Title" />

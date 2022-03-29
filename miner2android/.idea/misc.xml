@@ -43,7 +43,7 @@
         <entry key="app/src/main/res/layout/menu_pc_item.xml" value="0.5" />
         <entry key="app/src/main/res/layout/node_info_item.xml" value="0.5" />
         <entry key="app/src/main/res/layout/node_info_videocard.xml" value="0.5" />
-        <entry key="app/src/main/res/layout/pc_item.xml" value="0.33" />
+        <entry key="app/src/main/res/layout/pc_item.xml" value="0.5" />
         <entry key="app/src/main/res/layout/systeemcard.xml" value="0.33" />
         <entry key="app/src/main/res/layout/systeemcard_tv.xml" value="0.5" />
         <entry key="app/src/main/res/layout/tv.xml" value="0.5" />

@@ -1,7 +1,6 @@
 package com.bds89.miner2android
 
 import android.graphics.drawable.AnimationDrawable
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,7 +19,10 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
-import java.lang.Exception
+
+import android.graphics.drawable.Drawable
+import android.view.animation.AnimationUtils
+
 
 class PCadapter(
     var PCList: ArrayList<PC>,
@@ -46,16 +48,19 @@ class PCadapter(
         }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PCHolder {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.pc_item, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.pc_item, parent, false)
         return PCHolder(view)
     }
 
     override fun onBindViewHolder(holder: PCHolder, position: Int) {
         with(holder){
             with(binding){
+
                 if (refreshing.containsKey(position) && refreshing[position] == true) {
                     tvStatus.visibility = View.GONE
                     pbPing.visibility = View.VISIBLE
+                    root.animation =
+                        AnimationUtils.loadAnimation(context, R.anim.pcrecycler)
                 }
                 else {
                     tvStatus.visibility = View.VISIBLE
@@ -80,15 +85,14 @@ class PCadapter(
                         )
                     }
                 //if limits, change background
-//                cvItem.background = ContextCompat.getDrawable(context, R.drawable.pcitembg)
-//                if (overload_limits_names.contains(PCList[position].name)) {
-//                    val animationDrawable: AnimationDrawable = cvItem.background as AnimationDrawable
-//                    animationDrawable.setEnterFadeDuration(1000)
-//                    animationDrawable.setExitFadeDuration(1000)
-//                    animationDrawable.isOneShot = true
-//                    animationDrawable.start()
-//                    overload_limits_names.remove(PCList[position].name)
-//                }
+                if (overload_limits_names.contains(PCList[position].name)) {
+                    val animationDrawable: AnimationDrawable = llPcitem.background as AnimationDrawable
+                    animationDrawable.setEnterFadeDuration(500)
+                    animationDrawable.setExitFadeDuration(1000)
+                    animationDrawable.isOneShot = true
+                    animationDrawable.start()
+                }
+
                 tvTitle.text = PCList[position].name
                 tvStatus.text = PCList[position].status
                 ivPc.setOnClickListener(){
@@ -145,10 +149,20 @@ class PCadapter(
 
     fun refreshPCs() {
         //check limits
+        overload_limits_names.clear()
         var ips = hashMapOf<String, MutableMap<String, String>>()
         val jobGetOverload = GlobalScope.launch(Dispatchers.IO) {
             if (!PCList.isNullOrEmpty()) {
-                PCList.forEach { PC ->
+                PCList.forEachIndexed { index, PC ->
+
+                    //show progress bar
+                    withContext(Dispatchers.Main) {
+                        if (refreshing.containsKey(index)) refreshing[index] = true
+                        else refreshing.put(index, true)
+                        notifyItemChanged(index)
+                    }
+
+
                     if (PC.in_IP == "") {
                         if (!ips.containsKey("${PC.ex_IP}:${PC.port}")) ips.put(
                             "${PC.ex_IP}:${PC.port}",
@@ -185,7 +199,8 @@ class PCadapter(
                                 "port" to pc.port,
                                 "upass" to pc.upass,
                                 "request" to "check_limits",
-                                "value" to ip.value
+                                "value" to ip.value,
+                                "full_check" to true
                             )
                             val jsondata = gson.toJson(data)
                             val mediaType = "application/json; charset=utf-8".toMediaType()
@@ -200,7 +215,7 @@ class PCadapter(
                                 if (jsn.get("code") == 200) {
                                     val jsnData: JSONObject = jsn.get("data") as JSONObject
                                     jsnData.keys().forEach { key ->
-                                        overload_limits_names.add(key)
+                                        if (jsnData.get(key) !is Int) overload_limits_names.add(key)
                                     }
                                 }
                             } catch (e: java.lang.Exception) {
@@ -215,15 +230,12 @@ class PCadapter(
         PCList.forEachIndexed { index, element ->
             GlobalScope.launch(Dispatchers.Main) {
                 jobGetOverload.join()
-                if (refreshing.containsKey(index)) refreshing[index] = true
-                else refreshing.put(index, true)
-                notifyDataSetChanged()
 
                 PCList[index].status = getStatus(element)
 
                 if (refreshing.containsKey(index)) refreshing[index] = false
                 else refreshing.put(index, false)
-                notifyDataSetChanged()
+                notifyItemChanged(index)
             }
         }
     }
