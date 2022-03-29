@@ -67,4 +67,5 @@
     <string name="load">Load</string>
     <string name="save_restore_settings">Save/Restore settings</string>
     <string name="include_pcs_limits_for_notification">Include PCs, limits for notification</string>
+    <string name="open_item">Open</string>
 </resources>

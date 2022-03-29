@@ -21,6 +21,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 
 import android.graphics.drawable.Drawable
+import android.util.Log
 import android.view.animation.AnimationUtils
 
 
@@ -85,7 +86,9 @@ class PCadapter(
                         )
                     }
                 //if limits, change background
+                llPcitem.background = ContextCompat.getDrawable(context, R.drawable.pcitembg)
                 if (overload_limits_names.contains(PCList[position].name)) {
+                    Log.e("ml", overload_limits_names.toString())
                     val animationDrawable: AnimationDrawable = llPcitem.background as AnimationDrawable
                     animationDrawable.setEnterFadeDuration(500)
                     animationDrawable.setExitFadeDuration(1000)
@@ -123,7 +126,7 @@ class PCadapter(
         var pc_names = mutableListOf<String>()
         PCList.add(pc)
         PCList.sortBy { PC -> PC.name }
-        notifyDataSetChanged()
+        notifyItemChanged(PCList.indexOf(pc))
     }
 
     fun editPC(pc: PC) {
@@ -133,14 +136,15 @@ class PCadapter(
                 break
             }
         }
-        notifyDataSetChanged()
+        notifyItemChanged(PCList.indexOf(pc))
     }
 
     fun delPC(id: Int): Boolean {
         for (pc in PCList) {
             if (pc.id == id) {
-                PCList.removeAt(PCList.indexOf(pc))
-                notifyDataSetChanged()
+                val index = PCList.indexOf(pc)
+                PCList.removeAt(index)
+                notifyItemChanged(index)
                 return true
             }
         }

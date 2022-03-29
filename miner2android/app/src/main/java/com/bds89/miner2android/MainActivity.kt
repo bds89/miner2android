@@ -91,6 +91,7 @@ class MainActivity : AppCompatActivity() {
         onResult()
         init_menu()
         createNotificationChannel()
+        PCadapter.refreshPCs()
     }
 
     override fun onStart() {
@@ -103,7 +104,6 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         binding.menuPCRecycler.adapter = MenuPCadapter
-        PCadapter.refreshPCs()
         //settings background
         binding.llSettings.setBackgroundColor(0)
         super.onStart()
@@ -214,8 +214,15 @@ class MainActivity : AppCompatActivity() {
         popupMenu.setOnMenuItemClickListener(object : PopupMenu.OnMenuItemClickListener {
             override fun onMenuItemClick(item: MenuItem?): Boolean {
                 when (item?.itemId) {
+                    R.id.itemMenuOpen -> {
+                        val i = Intent(this@MainActivity, NodeInfoActivity::class.java).apply {
+                            putExtra(const.KEY_PCList, PCList)
+                            putExtra(const.KEY_PosNum, position)
+                        }
+                        itemInfoLauncher.launch(i)
+                        return true
+                    }
                     R.id.itemMenuEdit -> {
-                        // here are the logic to edit an item from the list
                         val i = Intent(this@MainActivity, itemEditActivity::class.java).apply {
                             putExtra(const.KEY_PC_item, PCadapter.PCList[position])
                             putExtra(const.KEY_PCList, PCList)
@@ -277,7 +284,6 @@ class MainActivity : AppCompatActivity() {
                         //save PCList
                         save(PCList, const.KEY_SavePC)
 
-                        PCadapter.refreshPCs()
                     } else {
                         PCadapter.addPC(pc)
                         PCList = PCadapter.PCList
