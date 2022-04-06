@@ -12,9 +12,12 @@
     <color name="BG">#000000</color>
     <color name="menuBG">#222222</color>
     <color name="leftmenuitemBG">#00222222</color>
-    <color name="addpcbuttonBG">#A6FFD600</color>
+    <color name="addpcbuttonBG">#FFD600</color>
     <color name="pcitembg">#202020</color>
     <color name="cardbg">#202020</color>
     <color name="text">#CDCDCD</color>
     <color name="teal_700tr">#80018786</color>
+    <color name="dialogBG">#002527</color>
+    <color name="dialogText">#FFFFFF</color>
+    <color name="dialogButton">#FFD600</color>
 </resources>

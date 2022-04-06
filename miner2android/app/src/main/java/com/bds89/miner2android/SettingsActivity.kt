@@ -1,10 +1,7 @@
 package com.bds89.miner2android
 
-import android.app.ActivityManager
 import android.app.Dialog
-import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -21,11 +18,10 @@ import com.bds89.miner2android.BuildConfig.APPLICATION_ID
 import com.bds89.miner2android.databinding.ActivitySettingsBinding
 import com.bds89.miner2android.databinding.DialogSaveloadBinding
 import com.bds89.miner2android.databinding.DialogThemeBinding
+import com.bds89.miner2android.forRoom.*
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import okhttp3.Dispatcher
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -36,8 +32,6 @@ import java.io.*
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
-import kotlin.concurrent.thread
 
 
 class SettingsActivity : AppCompatActivity() {
@@ -49,7 +43,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var myWorkRequest: PeriodicWorkRequest
     private lateinit var getFileLauncher: ActivityResultLauncher<Intent>
     private lateinit var PCList :ArrayList<PC>
-    private lateinit var limits:HashMap<String, MutableList<Int>>
+    private lateinit var limits:ArrayList<LimitEntity?>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +52,7 @@ class SettingsActivity : AppCompatActivity() {
 
         supportActionBar?.title = getString(com.bds89.miner2android.R.string.settings)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
 
         //get or load settings
         if (intent.getSerializableExtra(const.KEY_SaveSettings) == null) {
@@ -123,35 +118,53 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun dialog_saveload_inflate() {
         dialog_saveLoad = Dialog(this)
+        //DB
+        val db: AppDatabase = App.instance.database
+        val PCsDao = db.pcsDao()
+        val limitDao = db.LimitDao()
+
         val dir: File = filesDir
         // Передайте ссылку на разметку
         val binding_d = DialogSaveloadBinding.inflate(layoutInflater)
         with(binding_d) {
             tvSave.setOnClickListener {
-                var all_settings = hashMapOf<String, Any>()
-                all_settings.put("settings", load(const.KEY_SaveSettings) as HashMap<String, String>)
-                all_settings.put("PCList", load(const.KEY_SavePC) as ArrayList<PC>)
-                all_settings.put("limits", load(const.KEY_SaveLimits) as HashMap<String, MutableList<Int>>)
-                //create file
-                val fileSave = FileOutputStream("$dir/m2a_settings")
-                val outStream = ObjectOutputStream(fileSave)
-                outStream.writeObject(all_settings)
-                outStream.close()
-                fileSave.close()
-                //create URI
-                val file = File("$dir/m2a_settings")
-                val uri = FileProvider.getUriForFile(
-                    Objects.requireNonNull(applicationContext),
-                    APPLICATION_ID + ".provider",
-                    file)
-                //create intent
-                val shareIntent: Intent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    type = "*/*"
+                GlobalScope.launch(Dispatchers.Main) {
+                    var all_settings = hashMapOf<String, Any>()
+                    val sett = load(const.KEY_SaveSettings)
+                    if (sett != null) {
+                        all_settings.put(
+                            "settings",
+                            sett as HashMap<String, String>
+                        )
+                    }
+                    //PClist
+                    val PCList = async { withContext(Dispatchers.IO) { PCsEntity.listToPCList(PCsDao?.getAll()) } }.await()
+                    all_settings.put("PCList", PCList)
+                    //Limits
+                    val limits = async { withContext(Dispatchers.IO) { ArrayList(limitDao?.getAll()) } }.await()
+                    all_settings.put("limits", limits)
+                    //create file
+                    val fileSave = FileOutputStream("$dir/m2a_settings")
+                    val outStream = ObjectOutputStream(fileSave)
+                    outStream.writeObject(all_settings)
+                    outStream.close()
+                    fileSave.close()
+                    //create URI
+                    val file = File("$dir/m2a_settings")
+                    val uri = FileProvider.getUriForFile(
+                        Objects.requireNonNull(applicationContext),
+                        APPLICATION_ID + ".provider",
+                        file
+                    )
+                    //create intent
+                    val shareIntent: Intent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        type = "*/*"
+                    }
+                    startActivity(Intent.createChooser(shareIntent, null))
+                    dialog_saveLoad.cancel()
                 }
-                startActivity(Intent.createChooser(shareIntent, null))
-                dialog_saveLoad.cancel()
             }
             tvLoad.setOnClickListener {
                 val intent = Intent()
@@ -197,30 +210,45 @@ class SettingsActivity : AppCompatActivity() {
                             binding.pbApplySettings.progress = 5
                             //PCList
                             if (all_settings.containsKey("PCList") && all_settings["PCList"] != false && all_settings["PCList"] != null) {
-                                save((all_settings["PCList"]!! as ArrayList<PC>), const.KEY_SavePC)
                                 PCList = all_settings["PCList"]!! as ArrayList<PC>
-                                binding.pbApplySettings.progress = 10
-                                //limits
-                                if (all_settings.containsKey("limits") && all_settings["limits"] != false && all_settings["limits"] != null) {
-                                    limits = all_settings["limits"]!! as HashMap<String, MutableList<Int>>
-                                    save(limits, const.KEY_SaveLimits)
-                                    val one_pc_progress = (90/PCList.size).toInt()
-                                    PCList.forEach { pc->
-                                        val job = GlobalScope.launch(Dispatchers.IO) {
-                                            if (!send_limits(pc)) Toast.makeText(
+                                GlobalScope.launch(Dispatchers.IO) {
+                                    PCsDao?.deleteAll()
+                                    PCList.forEach {
+                                        PCsDao?.insert(PCsEntity.fromPC(it))
+                                    }
+                                }
+                            }
+                            binding.pbApplySettings.progress = 10
+                            //limits
+                            if (all_settings.containsKey("limits") && all_settings["limits"] != false && all_settings["limits"] != null) {
+                                limits = all_settings["limits"]!! as ArrayList<LimitEntity?>
+
+                                GlobalScope.launch(Dispatchers.IO) {
+                                    limitDao?.deleteAll()
+                                    limits.forEach {
+                                        limitDao?.insert(it)
+                                    }
+                                }
+
+                                val one_pc_progress = (90/PCList.size).toInt()
+                                var send_succes = true
+                                PCList.forEach { pc->
+                                    val job = GlobalScope.launch(Dispatchers.IO) {
+                                        send_succes = send_limits(pc)
+                                    }
+                                    GlobalScope.launch(Dispatchers.Main) {
+                                        job.join()
+                                        if (!send_succes) {
+                                            Toast.makeText(
                                                 this@SettingsActivity,
                                                 "Can't load ${pc.name}",
                                                 Toast.LENGTH_LONG
                                             ).show()
                                         }
-                                        GlobalScope.launch(Dispatchers.Main) {
-                                            job.join()
-                                            binding.pbApplySettings.progress += one_pc_progress
-                                        }
+                                        binding.pbApplySettings.progress += one_pc_progress
                                     }
                                 }
                             }
-
                         } catch (e: Exception) {
                             Log.e("ml", e.toString())
                             Toast.makeText(this, "Can't load this settings", Toast.LENGTH_LONG).show()
@@ -273,20 +301,6 @@ class SettingsActivity : AppCompatActivity() {
         dialog_saveLoad.setOnCancelListener { llSettings.setBackgroundColor(0) }
     }
 
-    // Custom method to determine whether a service is running
-//    private fun isServiceRunning(serviceClass: Class<*>): Boolean {
-//        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-//
-//        // Loop through the running services
-//        for (service in activityManager.getRunningServices(Integer.MAX_VALUE)) {
-//            if (serviceClass.name == service.service.className) {
-//                // If the service is running then return true
-//                return true
-//            }
-//        }
-//        return false
-//    }
-
     fun save(saveData: Any, file:String) {
         val dir: File = filesDir
         try {
@@ -300,7 +314,7 @@ class SettingsActivity : AppCompatActivity() {
             Toast.makeText(this, "$text: $e", Toast.LENGTH_SHORT).show()
         }
     }
-    fun load(file:String) :Any{
+    fun load(file:String) :Any?{
         val dir: File = filesDir
         try {
             val file = FileInputStream("$dir/${file}")
@@ -311,7 +325,7 @@ class SettingsActivity : AppCompatActivity() {
             return saveData
         } catch (e: Exception) {
         }
-        return false
+        return null
     }
 
     private fun LimitsNotifycationWork(){
@@ -331,26 +345,21 @@ class SettingsActivity : AppCompatActivity() {
     private fun send_limits(pc: PC):Boolean {
         val client = OkHttpClient()
         try {
-            //match gpus number
-            var gpusNumber = 0
-            limits.forEach { (key, _) ->
-                if ("${pc.name}_" in key && "${pc.name}_99999_" !in key) gpusNumber += 1
-            }
-            val new_limits_one_rig = hashMapOf<String, MutableMap<String, List<Int>>>()
-            limits.forEach { (key, value) ->
-                for (gpuNum in 0 until gpusNumber) {
-                    if ("${pc.name}_${gpuNum}_" in key) {
-                        val new_key = key.drop("${pc.name}_${gpuNum}_".length)
-                        if (new_limits_one_rig.containsKey("$gpuNum")) new_limits_one_rig["$gpuNum"]?.put(new_key, value)
-                        else new_limits_one_rig.put("$gpuNum", mutableMapOf(new_key to value))
-                    }
-                }
-                if ("${pc.name}_99999_" in key) {
-                    val new_key = key.drop("${pc.name}_${99999}_".length)
-                    if (new_limits_one_rig.containsKey("99999")) new_limits_one_rig["99999"]?.put(new_key, value)
-                    else new_limits_one_rig.put("99999", mutableMapOf(new_key to value))
+            val limitsOneRig = limits.filter { it?.pcName == pc.name }
+            val new_limits_one_rig = hashMapOf<String, MutableMap<String, List<Any>>>()
+            limitsOneRig.forEach {
+                if (it != null) {
+                    if (new_limits_one_rig.containsKey("${it.ptype}")) new_limits_one_rig["${it.ptype}"]?.put(
+                        it.pname,
+                        listOf(it.value, it.above, it.datetime)
+                    )
+                    else new_limits_one_rig.put(
+                        "${it.ptype}",
+                        mutableMapOf(it.pname to listOf(it.value, it.above, it.datetime))
+                    )
                 }
             }
+
             var ip = pc.ex_IP
             if (pc.ex_IP.isEmpty()) ip = pc.in_IP
             val url = "http://$ip:${pc.port}/control"
@@ -397,5 +406,4 @@ class SettingsActivity : AppCompatActivity() {
         }
         super.onBackPressed()
     }
-
 }

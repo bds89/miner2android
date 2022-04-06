@@ -19,6 +19,9 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.widget.ViewPager2
+import com.bds89.miner2android.forRoom.App
+import com.bds89.miner2android.forRoom.AppDatabase
+import com.bds89.miner2android.forRoom.LimitEntity
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.Dispatchers
@@ -244,85 +247,74 @@ class itemEditActivity : AppCompatActivity() {
     }
 
     suspend fun ChangeNameEverywhere(old:String, pc: PC) {
-
         val dir: File = filesDir
-        var limits = hashMapOf<String, MutableList<Int>>()
-        val newLimits = hashMapOf<String, MutableList<Int>>()
         val client = OkHttpClient()
+        //DB
+        val db: AppDatabase = App.instance.database
+        val limitDao = db.LimitDao()
 
-        try {
-            //load limits
-            val file = FileInputStream("$dir/${const.KEY_SaveLimits}")
-            val inStream = ObjectInputStream(file)
-            limits = inStream.readObject() as HashMap<String, MutableList<Int>>
-            inStream.close()
-            file.close()
-            //change limits
-            limits.forEach { key, value->
-                if ("${old}_" in key) {
-                    val new_key = "${pc.name}_"+key.drop("${old}_".length)
-                    newLimits.put(new_key, value)
-                } else newLimits.put(key, value)
+
+        GlobalScope.launch(Dispatchers.IO) {
+            val limitsOneRig = limitDao?.getByPcname(old)
+            if (limitsOneRig != null) {
+                try {
+                    //send newLimits
+                    val new_limits_one_rig = hashMapOf<String, MutableMap<String, List<Any>>>()
+                    limitsOneRig.forEach {
+                        it?.pcName = pc.name
+                        limitDao.update(it)
+                        if (it != null) {
+                            if (new_limits_one_rig.containsKey("${it.ptype}")) new_limits_one_rig["${it.ptype}"]?.put(
+                                it.pname,
+                                listOf(it.value, it.above, it.datetime)
+                            )
+                            else new_limits_one_rig.put(
+                                "${it.ptype}",
+                                mutableMapOf(it.pname to listOf(it.value, it.above, it.datetime))
+                            )
+                        }
+                    }
+
+                    var ip = pc.ex_IP
+                    if (pc.ex_IP.isEmpty()) ip = pc.in_IP
+
+                    val url = "http://$ip:${pc.port}/control"
+                    //create json of pc object
+                    val gson: Gson = GsonBuilder().create()
+                    var data = mutableMapOf<String, Any>(
+                        "ex_IP" to pc.ex_IP,
+                        "id" to pc.id,
+                        "in_IP" to pc.in_IP,
+                        "in_port" to pc.in_port,
+                        "name" to pc.name,
+                        "port" to pc.port,
+                        "upass" to pc.upass,
+                        "request" to "send_limits",
+                        "value" to new_limits_one_rig
+                    )
+
+                    val jsondata = gson.toJson(data)
+
+                    val mediaType = "application/json; charset=utf-8".toMediaType()
+                    val request = Request.Builder()
+                        .url(url)
+                        .post(jsondata.toRequestBody(mediaType))
+                        .build()
+
+                    var inf = JSONObject()
+                    val resp = client.newCall(request).execute()
+                    inf = JSONObject(resp.body!!.string())
+                    GlobalScope.launch(Dispatchers.Main) {
+                        if (inf.get("code") != 200) Toast.makeText(
+                            this@itemEditActivity,
+                            inf.toString(),
+                            Toast.LENGTH_SHORT
+                        )
+                            .show()
+                    }
+                    } catch (e: Exception) { }
             }
-            //save newLimits
-            val fileSave = FileOutputStream("$dir/${const.KEY_SaveLimits}")
-            val outStream = ObjectOutputStream(fileSave)
-            outStream.writeObject(newLimits)
-            outStream.close()
-            file.close()
-            //send newLimits
-            val new_limits_one_rig = hashMapOf<String, MutableMap<String, List<Int>>>()
-            //match gpus number
-            var gpusNumber = 0
-            newLimits.forEach { (key, _) ->
-                if ("${pc.name}_" in key && "${pc.name}_99999_" !in key) gpusNumber += 1
-            }
-            newLimits.forEach { (key, value) ->
-                //system parameters
-                if ("${pc.name}_99999_" in key) {
-                    val new_key = key.drop("${pc.name}_${99999}_".length)
-                    if (new_limits_one_rig.containsKey("99999")) new_limits_one_rig["99999"]?.put(new_key, value)
-                    else new_limits_one_rig.put("99999", mutableMapOf(new_key to value))
-                    return@forEach
-                }
-                for (gpuNum in 0 until gpusNumber) {
-                    if ("${pc.name}_${gpuNum}_" in key) {
-                        val new_key = key.drop("${pc.name}_${gpuNum}_".length)
-                        if (new_limits_one_rig.containsKey("$gpuNum")) new_limits_one_rig["$gpuNum"]?.put(new_key, value)
-                        else new_limits_one_rig.put("$gpuNum", mutableMapOf(new_key to value))
-                    } else break
-                }
-            }
-            var ip = pc.ex_IP
-            if (pc.ex_IP.isEmpty()) ip = pc.in_IP
-
-            val url = "http://$ip:${pc.port}/control"
-            //create json of pc object
-            val gson: Gson = GsonBuilder().create()
-            var data = mutableMapOf<String, Any>(
-                "ex_IP" to pc.ex_IP,
-                "id" to pc.id,
-                "in_IP" to pc.in_IP,
-                "in_port" to pc.in_port,
-                "name" to pc.name,
-                "port" to pc.port,
-                "upass" to pc.upass,
-                "request" to "send_limits",
-                "value" to new_limits_one_rig)
-
-            val jsondata = gson.toJson(data)
-
-            val mediaType = "application/json; charset=utf-8".toMediaType()
-            val request = Request.Builder()
-                .url(url)
-                .post(jsondata.toRequestBody(mediaType))
-                .build()
-
-            var inf = JSONObject()
-                val resp = client.newCall(request).execute()
-                inf = JSONObject(resp.body!!.string())
-            if (inf.get("code") != 200) Toast.makeText(this, inf.toString(), Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) { }
+        }
         //try to load and save last_resonce_time
         try {
             val file = FileInputStream("$dir/${const.KEY_SaveLastResponce}")

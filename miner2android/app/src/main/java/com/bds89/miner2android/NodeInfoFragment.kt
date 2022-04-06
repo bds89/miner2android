@@ -21,12 +21,15 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.bds89.miner2android.databinding.*
+import com.bds89.miner2android.forRoom.App
+import com.bds89.miner2android.forRoom.AppDatabase
+import com.bds89.miner2android.forRoom.LimitEntity
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.jjoe64.graphview.DefaultLabelFormatter
 import com.jjoe64.graphview.GraphView
-import com.jjoe64.graphview.ValueDependentColor
 import com.jjoe64.graphview.series.BarGraphSeries
 import com.jjoe64.graphview.series.DataPoint
 import com.jjoe64.graphview.series.LineGraphSeries
@@ -91,7 +94,7 @@ class NodeInfoFragment : Fragment() {
     private lateinit var hidden_params: MutableList<Int>
     private lateinit var all_cards_ids: MutableList<Int>
     private lateinit var dialog_videocard: NodeInfoFragment.MyDialogFragment
-    private lateinit var limits:HashMap<String, MutableList<Int>>
+    private lateinit var limitsOneRig:  ArrayList<LimitEntity?>
 
     private val dataModel:DataModel by activityViewModels()
 
@@ -102,7 +105,9 @@ class NodeInfoFragment : Fragment() {
 
     private var gpus_lenght:Int = 0
     private var gpu_created = false
-
+    //DB
+    val db: AppDatabase = App.instance.database
+    val limitDao = db.LimitDao()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -122,7 +127,7 @@ class NodeInfoFragment : Fragment() {
         arguments?.takeIf { it.containsKey(const.KEY_PCList) }?.apply {
             position = getInt(const.KEY_PosNum)
             PCList = getSerializable(const.KEY_PCList) as ArrayList<PC>
-            limits = getSerializable(const.KEY_LIMITS) as HashMap<String, MutableList<Int>>
+            limitsOneRig = getSerializable(const.KEY_LIMITS) as  ArrayList<LimitEntity?>
 
             binding.ivItemIcon.setImageResource(
                 resources.getIdentifier(
@@ -138,10 +143,6 @@ class NodeInfoFragment : Fragment() {
         //observers for save limits, and PCLists, and responce
         dataModel.PCList.observe(activity as LifecycleOwner) {
             PCList = it
-        }
-        dataModel.limits.observe(activity as LifecycleOwner) {
-            limits = it
-            GlobalScope.launch(Dispatchers.IO) { send_limits() }
         }
         dataModel.responce.observe(activity as LifecycleOwner) {
             responce_from_ViewModel = it
@@ -171,6 +172,9 @@ class NodeInfoFragment : Fragment() {
             }
             R.id.abarRefresh -> {
                 inflate_cards(true)
+            }
+            R.id.clear_limits -> {
+                applydialog(getString(R.string.clear_limits_ask), getString(R.string.yes), getString(R.string.no))
             }
         }
         return true
@@ -216,6 +220,57 @@ class NodeInfoFragment : Fragment() {
             if (this@NodeInfoFragment::info.isInitialized) {
                 //status code
                 if (info["code"] == 200) {
+                    //Limits from responce
+                        if (info.has("limits") && !info.isNull("limits")) {
+                            withContext(Dispatchers.IO) {
+                                val limits = info.getJSONObject("limits")
+                                if (limits.length()>0) {
+                                    val keys1: JSONArray = limits.names()
+                                    var needSendToRig = false
+                                    for (i in 0 until keys1.length()) {
+                                        val key1 = keys1[i] as String
+                                        val oneType = limits.getJSONObject(key1)
+                                        val keys2: JSONArray = oneType.names()
+                                        k2@ for (i2 in 0 until keys2.length()) {
+                                            val key2 = keys2[i2] as String
+                                            val lim_responce = oneType.getJSONArray(key2)
+                                            if (lim_responce.length() < 3) {
+                                                needSendToRig = true
+                                                continue@k2
+                                            }
+                                            val lim =
+                                                limitsOneRig.find { it?.pcName == PCList[position].name && it.ptype == key1.toInt() && it.pname == key2 }
+                                            if (lim == null) {
+                                                val newLim = LimitEntity(
+                                                    pcName = PCList[position].name,
+                                                    ptype = key1.toInt(),
+                                                    pname = key2,
+                                                    above = lim_responce.getBoolean(1),
+                                                    value = lim_responce.getInt(0),
+                                                    datetime = lim_responce.getLong(2)
+                                                )
+                                                limitsOneRig.add(newLim)
+                                                limitDao?.insert(newLim)
+                                                continue@k2
+                                            }
+                                            if (lim != null && lim.datetime < lim_responce.getLong(2)) {
+                                                val index = limitsOneRig.indexOf(lim)
+                                                lim.value = lim_responce.getInt(0)
+                                                lim.above = lim_responce.getBoolean(1)
+                                                lim.datetime = lim_responce.getLong(2)
+                                                limitsOneRig[index] = lim
+                                                limitDao?.update(lim)
+                                                continue@k2
+                                            }
+                                            if (!needSendToRig && lim != null && lim.datetime > lim_responce.getLong(2)) {
+                                                needSendToRig = true
+                                            }
+                                        }
+                                    }
+                                    if (needSendToRig) send_limits()
+                                }
+                            }
+                        }
                     //GPU parameters
                     try {
                         gpus = info.getJSONObject("data").getJSONArray("gpus")
@@ -287,7 +342,7 @@ class NodeInfoFragment : Fragment() {
 
             override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
                 return activity?.let {
-                    val builder = AlertDialog.Builder(it)
+                    val builder = AlertDialog.Builder(it, R.style.applyDialog)
                     builder.setTitle(title)
                         .setMessage(message)
                         .setIcon(resources.getIdentifier(
@@ -308,7 +363,38 @@ class NodeInfoFragment : Fragment() {
         val myDialogFragment = MyDialogFragment("Error: ${info["code"].toString()}", info["text"].toString(), "OK")
         val manager = requireActivity().supportFragmentManager
         myDialogFragment.show(manager, "myDialog")
+    }
+    //apply dialog
+    private fun applydialog(t1:String, b1:String="null", b2:String="null"){
+        class MyDialogFragment(
+            val message: String,
+            val b1:String,
+            val b2:String
+        ) : DialogFragment() {
 
+            override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+                return activity?.let {
+                    val builder = AlertDialog.Builder(it, R.style.applyDialog)
+                        .setMessage(message)
+                        .setIcon(R.drawable.ic_baseline_delete_sweep_24)
+                        .setPositiveButton(b1) { dialog, id ->
+                            GlobalScope.launch(Dispatchers.IO) {
+                                limitDao?.deleteByPcname(PCList[position].name)
+                                limitsOneRig.clear()
+                                send_limits()
+                            }
+                        }
+                        .setNegativeButton(b2) { dialog, id ->
+                        }
+                    builder.create()
+                } ?: throw IllegalStateException("Activity cannot be null")
+            }
+        }
+
+
+        val myDialogFragment = MyDialogFragment(t1,b1,b2)
+        val manager = requireActivity().supportFragmentManager
+        myDialogFragment.show(manager, "myDialog")
     }
 
     suspend fun addvideocard(gpus: JSONArray) {
@@ -344,19 +430,6 @@ class NodeInfoFragment : Fragment() {
                 val s_bar = sysBinding.sb
                 val b_below = sysBinding.bBelow
                 val b_above = sysBinding.bAbove
-
-//                val tv_for_syscard = LayoutInflater.from(requireContext()).inflate(R.layout.tv_for_syscard, null, false)
-
-//                val ll_for_sys_card = tv_for_syscard.findViewById(R.id.ll_for_sys_card) as ConstraintLayout
-//                val ll_for_card_vert = tv_for_syscard.findViewById(R.id.ll_for_card_vert) as LinearLayout
-//                ll_for_card_vert.id = View.generateViewId()
-//                val tv_properti = tv_for_syscard.findViewById(R.id.tv_properti) as TextView
-//                val tv_value = tv_for_syscard.findViewById(R.id.tv_value) as TextView
-//                val iv_icon = tv_for_syscard.findViewById(R.id.iv_icon) as ImageView
-//                val ll_sb = tv_for_syscard.findViewById(R.id.ll_sb) as LinearLayout
-//                val s_bar = tv_for_syscard.findViewById(R.id.sb) as SeekBar
-//                val b_below = tv_for_syscard.findViewById(R.id.b_below) as Button
-//                val b_above = tv_for_syscard.findViewById(R.id.b_above) as Button
 
                 const.iconsofparams[key]?.let { iv_icon.setImageResource(it) }
                 if (const.namesofparams.containsKey(key)) tv_properti.text = const.namesofparams[key]?.let { getString(it) }
@@ -431,17 +504,6 @@ class NodeInfoFragment : Fragment() {
             val b_below = sysBinding.bBelow
             val b_above = sysBinding.bAbove
 
-//            val tv_for_syscard = LayoutInflater.from(requireContext()).inflate(R.layout.tv_for_syscard, null, false)
-
-//            val ll_for_sys_card = tv_for_syscard.findViewById(R.id.ll_for_sys_card) as ConstraintLayout
-//            val tv_properti = tv_for_syscard.findViewById(R.id.tv_properti) as TextView
-//            val tv_value = tv_for_syscard.findViewById(R.id.tv_value) as TextView
-//            val iv_icon = tv_for_syscard.findViewById(R.id.iv_icon) as ImageView
-//            val ll_sb = tv_for_syscard.findViewById(R.id.ll_sb) as LinearLayout
-//            val s_bar = tv_for_syscard.findViewById(R.id.sb) as SeekBar
-//            val b_below = tv_for_syscard.findViewById(R.id.b_below) as Button
-//            val b_above = tv_for_syscard.findViewById(R.id.b_above) as Button
-
             const.iconsofparams[key]?.let { iv_icon.setImageResource(it) }
             if (const.namesofparams.containsKey(key)) tv_properti.text = const.namesofparams[key]?.let { getString(it) }
             else tv_properti.text = key
@@ -487,6 +549,7 @@ class NodeInfoFragment : Fragment() {
             ivItemIcon.setOnClickListener {
                 val animationRotateCenter = AnimationUtils.loadAnimation(requireContext(), R.anim.rotate1)
                 ivItemIcon.startAnimation(animationRotateCenter)
+                lifecycleScope.launch { Log.e("ml", limitDao?.getAll().toString()) }
             }
             //animation
             linearLayout.animation =
@@ -513,25 +576,68 @@ class NodeInfoFragment : Fragment() {
         }
         else {
             //on hide seekBar
-            if (limits.containsKey("${PCList[position].name}_${gpuNum}_$key")) {
-                limits["${PCList[position].name}_${gpuNum}_$key"]?.set(0, s_bar.progress)
+            var curlimit = limitsOneRig.find { it?.ptype == gpuNum && it.pname == key }
+            if (curlimit != null) {
+                if (curlimit.value != s_bar.progress) {
+                    val indexCurLimit = limitsOneRig.indexOf(curlimit)
+//                curlimit.above = true
+                    curlimit.value = s_bar.progress
+                    curlimit.datetime = System.currentTimeMillis()
+                    limitsOneRig[indexCurLimit] = curlimit
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        limitDao?.update(curlimit)
+                        send_limits()
+                    }
+                }
+            } else {
+                curlimit = LimitEntity(
+                    pcName = PCList[position].name,
+                    ptype = gpuNum,
+                    pname = key,
+                    above = true,
+                    value =  s_bar.progress,
+                    datetime = System.currentTimeMillis()
+                )
+                limitsOneRig.add(curlimit)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    limitDao?.insert(curlimit)
+                    send_limits()
+                }
+
             }
-            else {
-                limits.put("${PCList[position].name}_${gpuNum}_$key", mutableListOf(s_bar.progress, 1))
-            }
+
             ll_sb.visibility = View.GONE
             tv_value.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.text)))
             tv_value.text = value.toString()
-            dataModel.limits.value = limits
         }
         b_below.setOnClickListener {
-            if (limits.containsKey("${PCList[position].name}_${gpuNum}_$key")) {
-                limits["${PCList[position].name}_${gpuNum}_$key"]?.set(0, s_bar.progress)
-                limits["${PCList[position].name}_${gpuNum}_$key"]?.set(1, 0)
+            var curlimit = limitsOneRig.find { it?.ptype == gpuNum && it.pname == key }
+            if (curlimit != null) {
+                val indexCurLimit = limitsOneRig.indexOf(curlimit)
+                curlimit!!.above = false
+                curlimit!!.value = s_bar.progress
+                curlimit!!.datetime = System.currentTimeMillis()
+                limitsOneRig[indexCurLimit] = curlimit
+                lifecycleScope.launch(Dispatchers.IO) {
+                    limitDao?.update(curlimit)
+                    send_limits()
+                }
+            } else {
+                curlimit = LimitEntity(
+                    pcName = PCList[position].name,
+                    ptype = gpuNum,
+                    pname = key,
+                    above = false,
+                    value =  s_bar.progress,
+                    datetime = System.currentTimeMillis()
+                )
+                limitsOneRig.add(curlimit)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    limitDao?.insert(curlimit)
+                    send_limits()
+                }
             }
-            else {
-                limits.put("${PCList[position].name}_${gpuNum}_$key", mutableListOf(s_bar.progress, 0))
-            }
+
             b_above.backgroundTintList = (ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.text)))
             b_below.backgroundTintList = (ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.teal_700)))
             GlobalScope.launch(Dispatchers.Main) {
@@ -541,15 +647,33 @@ class NodeInfoFragment : Fragment() {
                 tv_value.text = value.toString()
             }
             set_value_bg(ll_for_sys_card = ll_for_sys_card, value = value, gpuNum = gpuNum, key = key)
-            dataModel.limits.value = limits
         }
         b_above.setOnClickListener {
-            if (limits.containsKey("${PCList[position].name}_${gpuNum}_$key")) {
-                limits["${PCList[position].name}_${gpuNum}_$key"]?.set(0, s_bar.progress)
-                limits["${PCList[position].name}_${gpuNum}_$key"]?.set(1, 1)
-            }
-            else {
-                limits.put("${PCList[position].name}_${gpuNum}_$key", mutableListOf(s_bar.progress, 1))
+            var curlimit = limitsOneRig.find { it?.ptype == gpuNum && it.pname == key }
+            if (curlimit != null) {
+                val indexCurLimit = limitsOneRig.indexOf(curlimit)
+                curlimit!!.above = true
+                curlimit!!.value = s_bar.progress
+                curlimit!!.datetime = System.currentTimeMillis()
+                limitsOneRig[indexCurLimit] = curlimit
+                lifecycleScope.launch(Dispatchers.IO) {
+                    limitDao?.update(curlimit)
+                    send_limits()
+                }
+            } else {
+                curlimit = LimitEntity(
+                    pcName = PCList[position].name,
+                    ptype = gpuNum,
+                    pname = key,
+                    above = true,
+                    value =  s_bar.progress,
+                    datetime = System.currentTimeMillis()
+                )
+                limitsOneRig.add(curlimit)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    limitDao?.insert(curlimit)
+                    send_limits()
+                }
             }
 
             b_below.backgroundTintList = (ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.text)))
@@ -561,16 +685,16 @@ class NodeInfoFragment : Fragment() {
                 tv_value.text = value.toString()
             }
             set_value_bg(ll_for_sys_card = ll_for_sys_card, value = value, gpuNum = gpuNum, key = key)
-            dataModel.limits.value = limits
         }
     }
 
     private fun tuneSeekBar(s_bar: SeekBar, value: Double, gpuNum:Int=99999, key:String, b_below:Button, b_above:Button) {
         s_bar.max = value.toInt()*2
-        if ((limits.containsKey("${PCList[position].name}_${gpuNum}_$key")) &&
-                (limits["${PCList[position].name}_${gpuNum}_$key"] != null)) {
-                    s_bar.progress = limits["${PCList[position].name}_${gpuNum}_$key"]?.get(0)!!
-                    if (limits["${PCList[position].name}_${gpuNum}_$key"]?.get(1)!! == 0) b_below.backgroundTintList = (ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.teal_700)))
+        var curlimit = limitsOneRig.find { it?.ptype == gpuNum && it.pname == key }
+        if (curlimit != null) {
+            if (s_bar.max < curlimit.value) s_bar.max = curlimit.value
+            s_bar.progress = curlimit.value
+            if (!curlimit.above) b_below.backgroundTintList = (ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.teal_700)))
             else b_above.backgroundTintList = (ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.teal_700)))
         }
         else s_bar.progress = s_bar.max
@@ -583,27 +707,27 @@ class NodeInfoFragment : Fragment() {
         animationDrawable.setExitFadeDuration(1000)
         animationDrawable.isOneShot = true
 
-        if (progress != null) {
-            if ((limits.containsKey("${PCList[position].name}_${gpuNum}_$key")) && (limits["${PCList[position].name}_${gpuNum}_$key"] != null)) {
-                val limType = limits["${PCList[position].name}_${gpuNum}_$key"]?.get(1)
-                    if (limType == 0) {
-                        if (value < progress) animationDrawable.start()
-                        else ll_for_sys_card.background = ContextCompat.getDrawable(requireContext(), R.drawable.warning_bg)
-                    } else {
-                        if (value > progress) animationDrawable.start()
-                        else ll_for_sys_card.background = ContextCompat.getDrawable(requireContext(), R.drawable.warning_bg)
-                    }
-                }
-        } else {
-            if ((limits.containsKey("${PCList[position].name}_${gpuNum}_$key")) && (limits["${PCList[position].name}_${gpuNum}_$key"] != null)) {
-                val lim = limits["${PCList[position].name}_${gpuNum}_$key"]?.get(0)
-                val limType = limits["${PCList[position].name}_${gpuNum}_$key"]?.get(1)
-                if (limType == 0) {
-                    if (value < lim!!) animationDrawable.start()
-                    else ll_for_sys_card.background = ContextCompat.getDrawable(requireContext(), R.drawable.warning_bg)
+        var curlimit = limitsOneRig.find { it?.ptype == gpuNum && it.pname == key }
+        if (curlimit != null) {
+            if (progress != null) {
+                if (!curlimit.above) {
+                    if (value < progress) animationDrawable.start()
+                    else ll_for_sys_card.background =
+                        ContextCompat.getDrawable(requireContext(), R.drawable.warning_bg)
                 } else {
-                    if (value > lim!!) animationDrawable.start()
-                    else ll_for_sys_card.background = ContextCompat.getDrawable(requireContext(), R.drawable.warning_bg)
+                    if (value > progress) animationDrawable.start()
+                    else ll_for_sys_card.background =
+                        ContextCompat.getDrawable(requireContext(), R.drawable.warning_bg)
+                }
+            } else {
+                if (!curlimit.above) {
+                    if (value < curlimit.value) animationDrawable.start()
+                    else ll_for_sys_card.background =
+                        ContextCompat.getDrawable(requireContext(), R.drawable.warning_bg)
+                } else {
+                    if (value > curlimit.value) animationDrawable.start()
+                    else ll_for_sys_card.background =
+                        ContextCompat.getDrawable(requireContext(), R.drawable.warning_bg)
                 }
             }
         }
@@ -638,7 +762,7 @@ class MyDialogFragment(val PC: PC,
     private lateinit var info:JSONObject
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val builder = AlertDialog.Builder(activity)
+        val builder = AlertDialog.Builder(activity, R.style.applyDialog)
         val binding_d = DialogVideocardBinding.inflate(layoutInflater)
         with(binding_d) {
             //titul
@@ -767,19 +891,17 @@ class MyDialogFragment(val PC: PC,
 
     suspend fun send_limits(){
         val pc = PCList[position]
-        val new_limits_one_rig = hashMapOf<String, MutableMap<String, List<Int>>>()
-        limits.forEach { (key, value) ->
-            for (gpuNum in 0 until gpus_lenght) {
-                if ("${pc.name}_${gpuNum}_" in key) {
-                    val new_key = key.drop("${pc.name}_${gpuNum}_".length)
-                        if (new_limits_one_rig.containsKey("$gpuNum")) new_limits_one_rig["$gpuNum"]?.put(new_key, value)
-                    else new_limits_one_rig.put("$gpuNum", mutableMapOf(new_key to value))
-                }
-            }
-            if ("${pc.name}_99999_" in key) {
-                val new_key = key.drop("${pc.name}_${99999}_".length)
-                if (new_limits_one_rig.containsKey("99999")) new_limits_one_rig["99999"]?.put(new_key, value)
-                else new_limits_one_rig.put("99999", mutableMapOf(new_key to value))
+        val new_limits_one_rig = hashMapOf<String, MutableMap<String, List<Any>>>()
+        limitsOneRig.forEach {
+            if (it != null) {
+                if (new_limits_one_rig.containsKey("${it.ptype}")) new_limits_one_rig["${it.ptype}"]?.put(
+                    it.pname,
+                    listOf(it.value, it.above, it.datetime)
+                )
+                else new_limits_one_rig.put(
+                    "${it.ptype}",
+                    mutableMapOf(it.pname to listOf(it.value, it.above, it.datetime))
+                )
             }
         }
         var ip = pc.ex_IP
@@ -943,7 +1065,7 @@ class MyDialogFragment(val PC: PC,
             var info_ = JSONObject()
             val tv_graph_error = tv_for_syscard.findViewById(R.id.tv_graph_error) as TextView
             val graph = tv_for_syscard.findViewById(R.id.graph) as GraphView
-            val series: LineGraphSeries<DataPoint> = LineGraphSeries(arrayOf())
+            var series: LineGraphSeries<DataPoint> = LineGraphSeries(arrayOf())
             val seriesPoint = PointsGraphSeries(arrayOf())
 
             if (graph.visibility == View.GONE && tv_graph_error.visibility == View.GONE) {
@@ -989,11 +1111,10 @@ class MyDialogFragment(val PC: PC,
                         graph.visibility = View.GONE
                         return@launch
                     }
-
-                    series.resetData(points)
+                    series = LineGraphSeries(points)
                     series.color = ContextCompat.getColor(requireContext(), R.color.addpcbuttonBG)
-                    graph.addSeries(series)
                     series.setAnimated(true)
+                    graph.addSeries(series)
 
                     //points
                     graph.addSeries(seriesPoint)
@@ -1042,8 +1163,7 @@ class MyDialogFragment(val PC: PC,
                 graph.visibility = View.GONE
                 tv_graph_error.visibility = View.GONE
                 tv_properti.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.text)))
-                series.resetData(arrayOf())
-                seriesPoint.resetData(arrayOf())
+                graph.removeAllSeries()
             }
         }
     }

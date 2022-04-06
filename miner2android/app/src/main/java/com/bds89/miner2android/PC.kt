@@ -12,14 +12,14 @@ data class PC(
     var port:String,
     var in_IP:String="",
     var in_port:String,
-    var visibility: Boolean=false): Serializable {
+    var visibility: Boolean=false,
+    var up:String=""): Serializable {
 
-    var upass = ""
+    var upass = up
         set(value) {
         val bytes = value.toByteArray()
         val md = MessageDigest.getInstance("SHA-1")
         val digest = md.digest(bytes)
         field = digest.joinToString("") { eachByte -> "%02x".format(eachByte) }
         }
-
     }

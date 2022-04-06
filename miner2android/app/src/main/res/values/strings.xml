@@ -68,4 +68,8 @@
     <string name="save_restore_settings">Save/Restore settings</string>
     <string name="include_pcs_limits_for_notification">Include PCs, limits for notification</string>
     <string name="open_item">Open</string>
+    <string name="clear_limits">Clear Limits</string>
+    <string name="clear_limits_ask">Clear limits?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
 </resources>

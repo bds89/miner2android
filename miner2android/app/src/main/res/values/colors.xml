@@ -17,5 +17,7 @@
     <color name="cardbg">#FFFFFF</color>
     <color name="text">#757575</color>
     <color name="teal_700tr">#80018786</color>
-
+    <color name="dialogBG">#FFFFFF</color>
+    <color name="dialogText">#757575</color>
+    <color name="dialogButton">#757575</color>
 </resources>

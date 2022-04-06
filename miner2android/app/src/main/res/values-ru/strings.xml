@@ -69,6 +69,10 @@
     <string name="save_restore_settings">Сохранение/восстановление</string>
     <string name="include_pcs_limits_for_notification">Список компьютеров и настройки уведомлений</string>
     <string name="open_item">Открыть</string>
+    <string name="clear_limits">Очистить лимиты</string>
+    <string name="clear_limits_ask">Очистить лимиты?</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
 
 
 </resources>

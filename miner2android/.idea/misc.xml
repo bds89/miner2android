@@ -6,10 +6,12 @@
         <entry key="../../../../../../../layout/custom_preview.xml" value="0.36816720257234725" />
         <entry key="app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.19739583333333333" />
         <entry key="app/src/main/res/drawable/cpu_freq.xml" value="0.105" />
+        <entry key="app/src/main/res/drawable/dialog_bg.xml" value="0.1935" />
         <entry key="app/src/main/res/drawable/dialog_videocard_bg.xml" value="0.1405" />
         <entry key="app/src/main/res/drawable/efficiency.xml" value="0.105" />
         <entry key="app/src/main/res/drawable/fan.xml" value="0.105" />
         <entry key="app/src/main/res/drawable/hashrate.xml" value="0.105" />
+        <entry key="app/src/main/res/drawable/ic_baseline_add_24.xml" value="0.1935" />
         <entry key="app/src/main/res/drawable/ic_baseline_arrow_left_24.xml" value="0.3072916666666667" />
         <entry key="app/src/main/res/drawable/ic_baseline_arrow_right_24.xml" value="0.3072916666666667" />
         <entry key="app/src/main/res/drawable/ic_baseline_color_lens_24.xml" value="0.1405" />
@@ -26,6 +28,9 @@
         <entry key="app/src/main/res/drawable/warning_gradient.xml" value="0.18" />
         <entry key="app/src/main/res/drawable/warning_gradient0.xml" value="0.1405" />
         <entry key="app/src/main/res/drawable/warning_gradient_verticl.xml" value="0.1405" />
+        <entry key="app/src/main/res/font-v26/main_font.xml" value="0.35833333333333334" />
+        <entry key="app/src/main/res/font/coda.xml" value="0.3130801687763713" />
+        <entry key="app/src/main/res/font/main_font.xml" value="1.0" />
         <entry key="app/src/main/res/layout/activity_item_edit.xml" value="0.22" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.33" />
         <entry key="app/src/main/res/layout/activity_node_info.xml" value="0.33" />

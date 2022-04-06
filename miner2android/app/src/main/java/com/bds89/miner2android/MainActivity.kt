@@ -1,5 +1,7 @@
 package com.bds89.miner2android
 
+import android.animation.AnimatorInflater
+import android.animation.AnimatorSet
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -18,15 +20,22 @@ import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.view.get
+import androidx.lifecycle.LifecycleCoroutineScope
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.work.PeriodicWorkRequest
 import com.bds89.miner2android.databinding.ActivityMainBinding
+import com.bds89.miner2android.forRoom.App
+import com.bds89.miner2android.forRoom.AppDatabase
+import com.bds89.miner2android.forRoom.PCsEntity
+import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.Dispatchers
@@ -54,11 +63,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var settings: HashMap<String, String>
     private var spanCount = 2
 
+    private val dataModel: DataModel by viewModels()
+    var PCList = ArrayList<PC>()
+
     lateinit var itemEditLauncher: ActivityResultLauncher<Intent>
     lateinit var itemInfoLauncher: ActivityResultLauncher<Intent>
     lateinit var SettingsLauncher: ActivityResultLauncher<Intent>
-    lateinit var PCList: ArrayList<PC>
     lateinit var toogle_menu: ActionBarDrawerToggle
+
+    //DB
+    val db: AppDatabase = App.instance.database
+    val PCsDao = db.pcsDao()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         //load settings
@@ -79,22 +94,33 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         //load PCList
-        val PCListLoad = load(const.KEY_SavePC)
-        if (PCListLoad != false) {
-            PCList = PCListLoad as ArrayList<PC>
-        } else {
-            binding.tvHello.visibility = View.VISIBLE
-            PCList = ArrayList<PC>()
-        }
+
+        lifecycleScope.launch { dataModel.PCList.value = PCsEntity.listToPCList(PCsDao?.getAll())}
+        //observers for save limits, and PCLists
 
         init()
         onResult()
         init_menu()
         createNotificationChannel()
-        PCadapter.refreshPCs()
+        //observe PCList
+        dataModel.PCList.observe(this) {
+            PCList = it
+            if (PCadapter.PCList != PCList) PCadapter.updatePCList(PCList)
+            //chose spancount for main recycler
+            spanCount = 2
+            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) spanCount *= 2
+            if (PCList.size > 0 && PCList.size < spanCount) spanCount = PCList.size
+            binding.PCRecycler.layoutManager = GridLayoutManager(this@MainActivity, spanCount)
+            //refresh leftside menu
+            MenuPCadapter.refreshList(PCadapter.PCList)
+            if (PCList.isNullOrEmpty()) binding.tvHello.visibility = View.VISIBLE
+            else binding.tvHello.visibility = View.GONE
+        }
     }
 
     override fun onStart() {
+        binding.btAdd.animation =
+            AnimationUtils.loadAnimation(this@MainActivity, R.anim.rotate1)
         //Menu adapter
         binding.menuPCRecycler.layoutManager = LinearLayoutManager(this@MainActivity)
         MenuPCadapter =
@@ -175,9 +201,10 @@ class MainActivity : AppCompatActivity() {
                     override fun itemClicked(position: Int) {
                         performItemClick(position)
                     }
-                })
+                },
+                dataModel = dataModel)
             PCRecycler.adapter = PCadapter
-            PCRecycler.animation
+//            PCRecycler.animation
 
             //button add pc
             btAdd.setOnClickListener {
@@ -236,13 +263,6 @@ class MainActivity : AppCompatActivity() {
                         if (!PCadapter.delPC(PCadapter.PCList[position].id)) text =
                             getString(R.string.delete_error)
                         Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show()
-                        MenuPCadapter.refreshList(PCadapter.PCList)
-                        //chose spancount for main recycler
-                        if (PCList.size > 0 && PCList.size < spanCount) spanCount = PCList.size
-                        binding.PCRecycler.layoutManager =
-                            GridLayoutManager(this@MainActivity, spanCount)
-                        //save PCList
-                        save(PCList, const.KEY_SavePC)
                         return true
                     }
                 }
@@ -279,28 +299,9 @@ class MainActivity : AppCompatActivity() {
                     val pc: PC = it.data?.getSerializableExtra(const.KEY_PC_item) as PC
                     if (it.data!!.getBooleanExtra(const.KEY_edit_item, false)) {
                         PCadapter.editPC(pc)
-                        PCList = PCadapter.PCList
-                        MenuPCadapter.refreshList(PCadapter.PCList)
-                        //save PCList
-                        save(PCList, const.KEY_SavePC)
-
                     } else {
                         PCadapter.addPC(pc)
-                        PCList = PCadapter.PCList
-                        MenuPCadapter.refreshList(PCList)
-
-                        //chose spancount for main recycler
-                        spanCount = 2
-                        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) spanCount *= 2
-                        if (PCList.size > 0 && PCList.size < spanCount) spanCount = PCList.size
-                        binding.PCRecycler.layoutManager =
-                            GridLayoutManager(this@MainActivity, spanCount)
-                        //save PCList
-                        save(PCList, const.KEY_SavePC)
-
-                        PCadapter.refreshPCs()
                     }
-
                 }
             }
         itemInfoLauncher =
@@ -319,7 +320,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        save(PCList, const.KEY_PCList)
+//        save(PCList, const.KEY_PCList)
         save(settings, const.KEY_SaveSettings)
         finish()
         super.onBackPressed()

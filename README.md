@@ -2,7 +2,7 @@
 
 Cбор информации с ваших майнинг ферм.
 
-<img src="screenshots/1.png" width="300"> <img src="screenshots/2.png" width="300"> 
+<img src="screenshots/1.jpg" width="300"> <img src="screenshots/2.png" width="300"> 
 
 <img src="screenshots/3.png" width="300"> <img src="screenshots/4.jpg" width="300">
 
@@ -17,12 +17,20 @@ Cбор информации с ваших майнинг ферм.
   <summary>1.2</summary>
 
 - Графики изменения величин, с момента начала предыдущих суток (необходимо обновление [miner2mqtt](https://github.com/bds89/miner2mqtt))
-</details>
+
 <details>
   <summary>1.2.1</summary>
 
 - Добавлена некоторая анимация
 </details>
+<details>
+  <summary>1.2.2</summary>
+
+- Сохранение теперь происходит в базу данных, вместо отдельных файлов. К сожалению вам придется заново добавить все свои компьютеры и их настройки, потому что мне лень было писать адаптер для переноса настроек.
+- Исправления
+</details>
+</details>
+
 
 ## Описание
 

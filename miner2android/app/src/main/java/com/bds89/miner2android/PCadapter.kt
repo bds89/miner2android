@@ -10,10 +10,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bds89.miner2android.databinding.PcItemBinding
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -23,17 +19,28 @@ import org.json.JSONObject
 import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.animation.AnimationUtils
+import androidx.lifecycle.LifecycleCoroutineScope
+import com.bds89.miner2android.forRoom.App
+import com.bds89.miner2android.forRoom.AppDatabase
+import com.bds89.miner2android.forRoom.PCsEntity
+import kotlinx.coroutines.*
+import okhttp3.Dispatcher
 
 
 class PCadapter(
     var PCList: ArrayList<PC>,
     private var optionsMenuClickListener: OptionsMenuClickListener,
-    private var itemClickListener: ItemClickListener
+    private var itemClickListener: ItemClickListener,
+    private var dataModel: DataModel
     ): RecyclerView.Adapter<PCadapter.PCHolder>() {
 
     val client = OkHttpClient()
     var refreshing:MutableMap<Int, Boolean> = mutableMapOf()
     var overload_limits_names = arrayListOf<String>()
+    //DB
+    val db: AppDatabase = App.instance.database
+    val PCsDao = db.pcsDao()
+    val limitDao = db.LimitDao()
 
     interface OptionsMenuClickListener {
         fun onOptionsMenuClicked(position: Int, ivPc: ImageView): Boolean
@@ -88,7 +95,6 @@ class PCadapter(
                 //if limits, change background
                 llPcitem.background = ContextCompat.getDrawable(context, R.drawable.pcitembg)
                 if (overload_limits_names.contains(PCList[position].name)) {
-                    Log.e("ml", overload_limits_names.toString())
                     val animationDrawable: AnimationDrawable = llPcitem.background as AnimationDrawable
                     animationDrawable.setEnterFadeDuration(500)
                     animationDrawable.setExitFadeDuration(1000)
@@ -118,54 +124,88 @@ class PCadapter(
     }
 
     fun addPC(pc: PC) {
-        var maxID:Int = 0
-        for (p in PCList) {
-            if (p.id > maxID) maxID = p.id
+        //DB
+        GlobalScope.launch(Dispatchers.Main) {
+            //DB
+            val idAwait = async { withContext(Dispatchers.IO) { PCsDao!!.insert(PCsEntity.fromPC(pc)).toInt() }}
+            pc.id = idAwait.await()
+            PCList.add(pc)
+            PCList.sortBy { PC -> PC.name }
+            refreshPCs(true)
+            dataModel.PCList.value = PCList
         }
-        pc.id = maxID+1
-        var pc_names = mutableListOf<String>()
-        PCList.add(pc)
-        PCList.sortBy { PC -> PC.name }
-        notifyItemChanged(PCList.indexOf(pc))
+    }
+
+    fun updatePCList(pcl: ArrayList<PC>) {
+        PCList = pcl
+        refreshPCs(false)
     }
 
     fun editPC(pc: PC) {
+        //DB
+        GlobalScope.launch { PCsDao!!.update(PCsEntity.fromPC(pc)) }
         for (oldpc in PCList) {
             if (oldpc.id == pc.id) {
                 PCList[PCList.indexOf(oldpc)] = pc
                 break
             }
         }
-        notifyItemChanged(PCList.indexOf(pc))
+        refreshPCs(true)
+        dataModel.PCList.value = PCList
     }
 
     fun delPC(id: Int): Boolean {
         for (pc in PCList) {
             if (pc.id == id) {
+                //DB
+                GlobalScope.launch {
+                    PCsDao?.delete(PCsEntity.fromPC(pc))
+                    limitDao?.deleteByPcname(pc.name)
+                }
                 val index = PCList.indexOf(pc)
                 PCList.removeAt(index)
                 notifyItemChanged(index)
+                dataModel.PCList.value = PCList
                 return true
             }
         }
         return false
     }
 
-    fun refreshPCs() {
+    fun refreshPCs(lite:Boolean=false) {
+        GlobalScope.launch(Dispatchers.Main) {
+            //show progress bar
+            PCList.forEachIndexed { index, element ->
+                //show progress bar
+                withContext(Dispatchers.Main) {
+                    if (refreshing.containsKey(index)) refreshing[index] = true
+                    else refreshing.put(index, true)
+                    notifyItemChanged(index)
+                }
+            }
+            //check limits
+            overload_limits_names.clear()
+            if (!lite) overload_limits_names = async { checkLimits() }.await()
+
+            //refresh
+            PCList.forEachIndexed { index, element ->
+
+                PCList[index].status = getStatus(element)
+
+                //hide progress bar
+                if (refreshing.containsKey(index)) refreshing[index] = false
+                else refreshing.put(index, false)
+                notifyItemChanged(index)
+            }
+        }
+    }
+
+    suspend fun checkLimits(): ArrayList<String> = withContext(Dispatchers.IO){
         //check limits
-        overload_limits_names.clear()
         var ips = hashMapOf<String, MutableMap<String, String>>()
-        val jobGetOverload = GlobalScope.launch(Dispatchers.IO) {
+        val overload_limits_names_ = arrayListOf<String>()
             if (!PCList.isNullOrEmpty()) {
                 PCList.forEachIndexed { index, PC ->
-
-                    //show progress bar
-                    withContext(Dispatchers.Main) {
-                        if (refreshing.containsKey(index)) refreshing[index] = true
-                        else refreshing.put(index, true)
-                        notifyItemChanged(index)
-                    }
-
 
                     if (PC.in_IP == "") {
                         if (!ips.containsKey("${PC.ex_IP}:${PC.port}")) ips.put(
@@ -219,7 +259,9 @@ class PCadapter(
                                 if (jsn.get("code") == 200) {
                                     val jsnData: JSONObject = jsn.get("data") as JSONObject
                                     jsnData.keys().forEach { key ->
-                                        if (jsnData.get(key) !is Int) overload_limits_names.add(key)
+                                        if (jsnData.get(key) !is Int) overload_limits_names_.add(
+                                            key
+                                        )
                                     }
                                 }
                             } catch (e: java.lang.Exception) {
@@ -229,19 +271,7 @@ class PCadapter(
                     }
                 }
             }
-        }
-        //refresh
-        PCList.forEachIndexed { index, element ->
-            GlobalScope.launch(Dispatchers.Main) {
-                jobGetOverload.join()
-
-                PCList[index].status = getStatus(element)
-
-                if (refreshing.containsKey(index)) refreshing[index] = false
-                else refreshing.put(index, false)
-                notifyItemChanged(index)
-            }
-        }
+        return@withContext overload_limits_names_
     }
 
     suspend fun getStatus(pc: PC): String =
