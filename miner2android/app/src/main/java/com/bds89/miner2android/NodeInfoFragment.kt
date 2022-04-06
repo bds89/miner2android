@@ -1029,11 +1029,13 @@ class MyDialogFragment(val PC: PC,
                 }
                 graphMain.getGridLabelRenderer().setNumHorizontalLabels(3)
                 // set manual x bounds to have nice steps
-                val dStart = points[0].x
-                val dEnd = points[points.size -1].x
-                graphMain.getViewport().setMinX(dStart)
-                graphMain.getViewport().setMaxX(dEnd)
-                graphMain.getViewport().setXAxisBoundsManual(true)
+                if (points.size > 0) {
+                    val dStart = points[0].x
+                    val dEnd = points[points.size - 1].x
+                    graphMain.getViewport().setMinX(dStart)
+                    graphMain.getViewport().setMaxX(dEnd)
+                    graphMain.getViewport().setXAxisBoundsManual(true)
+                }
 
                 series.setOnDataPointTapListener { series, dataPoint ->
                     val format = SimpleDateFormat("HH:mm")
