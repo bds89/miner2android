@@ -46,7 +46,6 @@
     <string name="need_enter_an_ip">Необходимо ввести внешний IP(или внутренний IP)</string>
     <string name="need_enter_an_iip">Необходимо ввести внутренний IP (или внешний)</string>
     <string name="need_enter_port">Необходимо ввести порт</string>
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="use_as_gateway">Подключаться через этот ПК (Шлюз)</string>
     <string name="theme">Тема</string>
@@ -73,6 +72,7 @@
     <string name="clear_limits_ask">Очистить лимиты?</string>
     <string name="yes">Да</string>
     <string name="no">Нет</string>
+    <string name="notification">Уведомления</string>
 
 
 </resources>

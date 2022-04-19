@@ -25,6 +25,7 @@ import com.bds89.miner2android.forRoom.AppDatabase
 import com.bds89.miner2android.forRoom.PCsEntity
 import kotlinx.coroutines.*
 import okhttp3.Dispatcher
+import java.io.*
 
 
 class PCadapter(

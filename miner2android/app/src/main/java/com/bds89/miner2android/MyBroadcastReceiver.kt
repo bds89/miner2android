@@ -8,6 +8,7 @@ import java.io.*
 
 class MyBroadcastReceiver : BroadcastReceiver() {
     var all_notification = hashMapOf<String, MutableMap<String, Int>>()
+    var last_resonce_time = hashMapOf<String, Int>()
     var title = ""
 
 
@@ -25,13 +26,35 @@ class MyBroadcastReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
             }
             all_notification.remove(title)
+            //try to load last_resonce_time
+            try {
+                val file = FileInputStream("$dir/${const.KEY_SaveLastResponce}")
+                val inStream = ObjectInputStream(file)
+                last_resonce_time = inStream.readObject() as HashMap<String, Int>
+                inStream.close()
+                file.close()
+            } catch (e: Exception) {
+            }
+            last_resonce_time.remove(title)
+
+            //save all_notification
+            try {
+                val file = FileOutputStream("$dir/${const.KEY_SaveAllNotification}")
+                val outStream = ObjectOutputStream(file)
+                outStream.writeObject(all_notification)
+                outStream.close()
+            } catch (e: Exception) {
+            }
+            //save last_resonce_time
+            try {
+                val file = FileOutputStream("$dir/${const.KEY_SaveLastResponce}")
+                val outStream = ObjectOutputStream(file)
+                outStream.writeObject(last_resonce_time)
+                outStream.close()
+                file.close()
+
+            } catch (e: Exception) {
+            }
         }
-        //save all_notification
-        try {
-            val file = FileOutputStream("$dir/${const.KEY_SaveAllNotification}")
-            val outStream = ObjectOutputStream(file)
-            outStream.writeObject(all_notification)
-            outStream.close()
-        } catch (e: Exception) { }
     }
 }

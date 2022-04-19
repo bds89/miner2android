@@ -45,7 +45,6 @@
     <string name="need_enter_an_ip">You need to enter an IP(or internal IP in your local network)</string>
     <string name="need_enter_an_iip">You need to enter an internal IP(or external IP</string>
     <string name="need_enter_port">You need to enter a port</string>
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="use_as_gateway">Use as gateway (connect by this PC)</string>
     <string name="theme">Theme</string>
@@ -72,4 +71,5 @@
     <string name="clear_limits_ask">Clear limits?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="notification">Notification</string>
 </resources>

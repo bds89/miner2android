@@ -43,6 +43,7 @@ class NodeInfoActivity : AppCompatActivity() {
     private val dataModel: DataModel by viewModels()
     private var limits = arrayListOf<LimitEntity?>()
     var all_notification = hashMapOf<String, MutableMap<String, Int>>()
+    var last_resonce_time = hashMapOf<String, Int>()
 
     //DB
     val db: AppDatabase = App.instance.database
@@ -71,6 +72,7 @@ class NodeInfoActivity : AppCompatActivity() {
                 PCList = pcl as ArrayList<PC>
                 position = intent.getIntExtra(const.KEY_PosNum, 0)
                 if (intent.getBooleanExtra("from_notification", false)) {
+                    val title = intent.getStringExtra("title")
                     //clear notification
                     //try to load all_notification
                     val dir: File = this@NodeInfoActivity.filesDir
@@ -84,12 +86,32 @@ class NodeInfoActivity : AppCompatActivity() {
                     } catch (e: Exception) {
                     }
                     all_notification.remove(PCList[position].name)
+                    //try to load last_resonce_time
+                    try {
+                        val file = FileInputStream("$dir/${const.KEY_SaveLastResponce}")
+                        val inStream = ObjectInputStream(file)
+                        last_resonce_time = inStream.readObject() as HashMap<String, Int>
+                        inStream.close()
+                        file.close()
+                    } catch (e: Exception) {
+                    }
+                    last_resonce_time.remove(title)
                     //save all_notification
                     try {
                         val file = FileOutputStream("$dir/${const.KEY_SaveAllNotification}")
                         val outStream = ObjectOutputStream(file)
                         outStream.writeObject(all_notification)
                         outStream.close()
+                    } catch (e: Exception) {
+                    }
+                    //save last_resonce_time
+                    try {
+                        val file = FileOutputStream("$dir/${const.KEY_SaveLastResponce}")
+                        val outStream = ObjectOutputStream(file)
+                        outStream.writeObject(last_resonce_time)
+                        outStream.close()
+                        file.close()
+
                     } catch (e: Exception) {
                     }
                 }

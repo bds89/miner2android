@@ -48,12 +48,14 @@ class AllNotification(context: Context, workerParams: WorkerParameters) : Worker
                     id = PC.id
                 }
             }
+
             //create intent, for open nodeinfo
             val intent = Intent(applicationContext, NodeInfoActivity::class.java)
             intent.apply {
                 putExtra(const.KEY_PCList, PCList_load)
                 putExtra(const.KEY_PosNum, position)
                 putExtra("from_notification", true)
+                putExtra("title", title)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
             val pendingIntent = PendingIntent.getActivity(applicationContext, id, intent, PendingIntent.FLAG_IMMUTABLE)
@@ -186,9 +188,9 @@ class AllNotification(context: Context, workerParams: WorkerParameters) : Worker
                     }
                 }
                 overload_limits.forEach { name, value ->
-                    if (value is Int) last_resonce_time.put(name, value)
+                    if (value is Int && (PCList_load.find { it.name == name }) != null) last_resonce_time.put(name, value)
                     else {
-                        if (!(value as JSONObject).has("code")) {
+                        if (!(value as JSONObject).has("code") && (PCList_load.find { it.name == name }) != null) {
                             value.keys().forEach { gpu ->
                                 last_resonce_time.put(
                                     name,
@@ -239,6 +241,7 @@ class AllNotification(context: Context, workerParams: WorkerParameters) : Worker
                     }
                 }
                 val temp = arrayListOf<String>()
+
                 last_resonce_time.forEach { name, value ->
                     val t2 = System.currentTimeMillis() / 1000
                     val tdelta = t2 - value
