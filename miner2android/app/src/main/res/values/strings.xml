@@ -72,4 +72,9 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="notification">Notification</string>
+    <string name="exchange_rates">Exchange rates</string>
+    <string name="name_or_ticker">Type Name or Ticker</string>
+    <string name="active">Active</string>
+    <string name="price_marketcup">Price/MarketCup</string>
+    <string name="change_24h_1h">Change 24h/1h</string>
 </resources>

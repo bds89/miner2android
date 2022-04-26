@@ -73,6 +73,11 @@
     <string name="yes">Да</string>
     <string name="no">Нет</string>
     <string name="notification">Уведомления</string>
+    <string name="exchange_rates">Курсы валют</string>
+    <string name="name_or_ticker">Для добавления введите имя или тикер</string>
+    <string name="active">Валюта</string>
+    <string name="price_marketcup">Цена/Капитализация</string>
+    <string name="change_24h_1h">Изменение 24ч/1ч</string>
 
 
 </resources>

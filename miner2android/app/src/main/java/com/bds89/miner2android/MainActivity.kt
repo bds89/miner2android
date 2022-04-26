@@ -1,23 +1,19 @@
 package com.bds89.miner2android
 
-import android.animation.AnimatorInflater
-import android.animation.AnimatorSet
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.drawable.AnimationDrawable
 import android.os.Build
 import android.os.Bundle
-import android.text.format.DateUtils
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.animation.AnimationUtils
-import android.widget.ImageView
-import android.widget.PopupMenu
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -25,34 +21,27 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.get
-import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.work.PeriodicWorkRequest
+import androidx.recyclerview.widget.RecyclerView
 import com.bds89.miner2android.databinding.ActivityMainBinding
-import com.bds89.miner2android.forRoom.App
-import com.bds89.miner2android.forRoom.AppDatabase
-import com.bds89.miner2android.forRoom.PCsEntity
+import com.bds89.miner2android.forRoom.*
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
+import kotlinx.coroutines.*
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONArray
 import org.json.JSONObject
 import java.io.*
+import java.lang.Math.round
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.concurrent.TimeUnit
-import java.util.prefs.PreferenceChangeListener
 import kotlin.collections.ArrayList
 
 
@@ -61,6 +50,21 @@ class MainActivity : AppCompatActivity() {
     private lateinit var PCadapter: PCadapter
     private lateinit var MenuPCadapter: MenuPCadapter
     private lateinit var settings: HashMap<String, String>
+    //for bottomSheet
+    private val client = OkHttpClient()
+    private var responce:String? = null
+    var CURList = ArrayList<CUR>()
+    var dateCURupdate = Date(0)
+    var userCURList = ArrayList<String>()
+    var userCURListforAdapter = ArrayList<CUR>()
+    var swipeEnabled = false
+    private lateinit var BottomSheetAdapter:BottomSheetAdapter
+    private lateinit var NamesAndTickers : ArrayList<String>
+    private lateinit var info: JSONObject
+    private lateinit var bottomSheetBehavior: BottomSheetBehavior<LinearLayout>
+
+
+
     private var spanCount = 2
 
     private val dataModel: DataModel by viewModels()
@@ -72,8 +76,9 @@ class MainActivity : AppCompatActivity() {
     lateinit var toogle_menu: ActionBarDrawerToggle
 
     //DB
-    val db: AppDatabase = App.instance.database
-    val PCsDao = db.pcsDao()
+    private val db: AppDatabase = App.instance.database
+    private val PCsDao = db.pcsDao()
+    private val curDao = db.CURDao()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         //load settings
@@ -89,7 +94,6 @@ class MainActivity : AppCompatActivity() {
             }
 
         } else settings = hashMapOf<String, String>()
-
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -102,6 +106,7 @@ class MainActivity : AppCompatActivity() {
         onResult()
         init_menu()
         createNotificationChannel()
+        bottomSheet()
         //observe PCList
         dataModel.PCList.observe(this) {
             PCList = it
@@ -313,7 +318,23 @@ class MainActivity : AppCompatActivity() {
 
         SettingsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (it.resultCode == RESULT_OK && it.data != null) {
-                PCList = it.data?.getSerializableExtra(const.KEY_PCList) as ArrayList<PC>
+                if (it.data?.getSerializableExtra(const.KEY_PCList) != null) {
+                    PCList = it.data?.getSerializableExtra(const.KEY_PCList) as ArrayList<PC>
+                    binding.tvHello.visibility = View.GONE
+                }
+                settings = it.data?.getSerializableExtra(const.KEY_SaveSettings) as HashMap<String, String>
+                val llBottomSheet = findViewById(R.id.bottom_sheet) as LinearLayout
+                val bottomSheetBehavior = BottomSheetBehavior.from(llBottomSheet)
+                if (settings.containsKey("CoinMarketCupToken")) {
+                    if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_HIDDEN &&
+                        !this::NamesAndTickers.isInitialized) {
+                            bottomSheet()
+                            bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+                    }
+                }
+                else {
+                    bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+                }
                 init()
             }
         }
@@ -322,8 +343,11 @@ class MainActivity : AppCompatActivity() {
     override fun onBackPressed() {
 //        save(PCList, const.KEY_PCList)
         save(settings, const.KEY_SaveSettings)
-        finish()
-        super.onBackPressed()
+        if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED) {
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+        } else {
+            finish()
+        }
     }
 
     //Notification Chanell
@@ -343,6 +367,278 @@ class MainActivity : AppCompatActivity() {
             notificationManager.createNotificationChannel(channel)
         }
     }
-    //send new name of PC
+    fun bottomSheet() {
+// получение вью нижнего экрана
+        val llBottomSheet = findViewById(R.id.bottom_sheet) as LinearLayout
+
+// настройка поведения нижнего экрана
+        bottomSheetBehavior = BottomSheetBehavior.from(llBottomSheet)
+        val tv_error = findViewById<TextView>(R.id.tv_error)
+
+//если нет токена
+        if (settings["CoinMarketCupToken"].isNullOrEmpty()) {
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+            return
+        }
+// Autocomplete text view
+        NamesAndTickers = arrayListOf<String>()
+        val adapterACTV: ArrayAdapter<String> = ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, NamesAndTickers)
+        val autocompletetv = findViewById<View>(R.id.autocomplete) as AutoCompleteTextView
+        autocompletetv.setAdapter(adapterACTV)
+        autocompletetv.setOnItemClickListener { parent, view, position, id ->
+            val curNameandSymbol = parent.getItemAtPosition(position)
+            val curIndex = NamesAndTickers.indexOf(curNameandSymbol)
+            val cur = CURList[curIndex]
+            GlobalScope.launch { curDao?.insert(CUREntity(CURsymbol = cur.symbol)) }
+            var needRefresh = false
+            if (userCURList.isNullOrEmpty()) needRefresh = true
+            userCURList.add(cur.symbol)
+            if (cur != null && !userCURListforAdapter.contains(cur)) {
+                BottomSheetAdapter.addCur(cur, needRefresh)
+            }
+            autocompletetv.setText("")
+             }
+
+        //long click btADD
+        binding.btAdd.setOnLongClickListener {
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+            return@setOnLongClickListener true
+        }
+
+        //lock SWIPE
+        val ivLock = findViewById<ImageView>(R.id.iv_lock)
+        ivLock.setOnClickListener {
+            swipeEnabled = if (swipeEnabled) {
+                ivLock.setImageResource(R.drawable.ic_baseline_lock_24)
+                ivLock.animate().alpha(0.5f).setDuration(300).start()
+                false
+            } else {
+                ivLock.setImageResource(R.drawable.ic_baseline_lock_open_24)
+                ivLock.animate().alpha(1f).setDuration(300).start()
+                true
+            }
+        }
+
+        //CURadapter
+        val bottomRecyclerView =
+            findViewById<RecyclerView>(R.id.bottomSheetRecycler)
+        bottomRecyclerView.layoutManager =
+            LinearLayoutManager(this@MainActivity)
+        BottomSheetAdapter = BottomSheetAdapter(userCURListforAdapter)
+
+        //move and swipe
+        val swipeRecyclerCallback = object :SwipeRecyclerCallback(BottomSheetAdapter) {
+            override fun isItemViewSwipeEnabled(): Boolean {
+                return swipeEnabled
+            }
+
+            override fun isLongPressDragEnabled(): Boolean {
+                return swipeEnabled
+            }
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val startPosition = viewHolder.adapterPosition
+                val endPosition = target.adapterPosition
+                Collections.swap(userCURList, startPosition, endPosition)
+                Collections.swap(userCURListforAdapter, startPosition, endPosition)
+                GlobalScope.launch { curDao?.insertAll(userCURList) }
+                return super.onMove(recyclerView, viewHolder, target)
+            }
+            override fun onSwiped(
+                viewHolder: RecyclerView.ViewHolder,
+                direction: Int
+            ) {
+                val symbolForDelete = userCURList[viewHolder.adapterPosition]
+                GlobalScope.launch { curDao?.deleteBySymbol(symbolForDelete) }
+                userCURList.remove(symbolForDelete)
+                userCURListforAdapter.removeAt(viewHolder.adapterPosition)
+                super.onSwiped(viewHolder, direction)
+            }
+        }
+        val itemTouchHelper = ItemTouchHelper(swipeRecyclerCallback)
+        itemTouchHelper.attachToRecyclerView(bottomRecyclerView)
+
+        bottomRecyclerView.adapter = BottomSheetAdapter
+
+// настройка колбэков при изменениях
+        var bottomSheetReady = false
+        bottomSheetBehavior.addBottomSheetCallback(object :
+            BottomSheetBehavior.BottomSheetCallback() {
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                if (binding.btAdd.visibility == View.GONE) binding.btAdd.visibility = View.VISIBLE
+                if (slideOffset >= 0) binding.btAdd.animate().scaleX(1 - slideOffset).scaleY(1 - slideOffset)
+                    .setDuration(0).start()
+                else {
+                    binding.btAdd.animate().scaleX(1 + slideOffset).scaleY(1 + slideOffset).setDuration(0).start()
+                }
+            }
+
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                when (newState) {
+                    BottomSheetBehavior.STATE_COLLAPSED -> {
+                        bottomSheetReady = false
+                        tv_error.visibility = View.GONE
+                        ivLock.animate().scaleX(0f).scaleY(0f).setDuration(300).start()
+                    }
+                    BottomSheetBehavior.STATE_HIDDEN -> {
+                        binding.btAdd.animate().scaleX(1f).scaleY(1f).setDuration(300).start()
+                        val fabAnim = binding.btAdd.getDrawable() as AnimationDrawable
+                        fabAnim.start()
+                    }
+                    BottomSheetBehavior.STATE_EXPANDED -> {
+                        bottomSheetReady = true
+                        binding.btAdd.visibility = View.GONE
+                        ivLock.visibility = View.VISIBLE
+//                        ivLock.animate().scaleX(0f).scaleY(0f).setDuration(0).start()
+                        if (!swipeEnabled) ivLock.animate().alpha(0.5f).setDuration(300).start()
+                        ivLock.animate().scaleX(1f).scaleY(1f).setDuration(300).start()
+                    }
+                    BottomSheetBehavior.STATE_DRAGGING -> {
+                        ivLock.animate().scaleX(0f).scaleY(0f).setDuration(300).start()
+                        if (!bottomSheetReady) {
+                            lifecycleScope.launch {
+                                try {
+                                    //get userList
+                                    val getListFromDB = async {
+                                        if (userCURList.isNullOrEmpty()) {
+                                            val dblist = curDao?.getAll()
+                                            dblist?.forEach {
+                                                if (it != null) userCURList.add(it.CURsymbol)
+                                            }
+                                        }
+                                    }
+                                    if (CURList.isNullOrEmpty() || (dateCURupdate.time < System.currentTimeMillis() - 30000)) {
+                                        if (settings["CoinMarketCupToken"].isNullOrEmpty()) throw Exception("No CoinMarketCupToken")
+                                        CURList.clear()
+                                        responce = get_data()
+                                        info = JSONObject(responce)
+                                        if (info.getJSONObject("status")
+                                                .getInt("error_code") != 0
+                                        ) {
+                                            throw Exception(
+                                                info.getJSONObject("status")
+                                                    .getString("error_message")
+                                            )
+                                        } else {
+                                            //update date
+                                            val timeString =
+                                                JSONObject(responce).getJSONObject("status")
+                                                    .getString("timestamp")
+                                            dateCURupdate =
+                                                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").parse(
+                                                    timeString
+                                                )
+
+                                            //create CURList
+                                            val data = info.getJSONArray("data")
+                                            NamesAndTickers.clear()
+                                            for (i in 0 until data.length() - 1) {
+                                                var oneCUR = CUR(
+                                                    name = data.getJSONObject(i).getString("name"),
+                                                    symbol = data.getJSONObject(i)
+                                                        .getString("symbol"),
+                                                    price = data.getJSONObject(i)
+                                                        .getJSONObject("quote").getJSONObject("USD")
+                                                        .getDouble("price"),
+                                                    percent_change_1h = data.getJSONObject(i)
+                                                        .getJSONObject("quote").getJSONObject("USD")
+                                                        .getDouble("percent_change_1h"),
+                                                    percent_change_24h = data.getJSONObject(i)
+                                                        .getJSONObject("quote").getJSONObject("USD")
+                                                        .getDouble("percent_change_24h"),
+                                                    market_cap = data.getJSONObject(i)
+                                                        .getJSONObject("quote").getJSONObject("USD")
+                                                        .getDouble("market_cap")
+                                                )
+                                                CURList.add(oneCUR)
+                                                //create name for autocompletetextview
+                                                NamesAndTickers.add(
+                                                    "${
+                                                        data.getJSONObject(i).getString("symbol")
+                                                    } | ${data.getJSONObject(i).getString("name")}" +
+                                                            " | ${round((data.getJSONObject(i)
+                                                                .getJSONObject("quote").getJSONObject("USD")
+                                                                .getDouble("price"))*100)/100}$" +
+                                                            " | ${round((data.getJSONObject(i)
+                                                                .getJSONObject("quote").getJSONObject("USD")
+                                                                .getDouble("percent_change_24h"))*100)/100}%"
+                                                )
+                                            }
+                                        }
+                                    }
+                                    //create user CURList
+                                    getListFromDB.await()
+                                    if (userCURList.isNullOrEmpty()) {
+                                        for (i in 0 until 9) {
+                                            if (!userCURListforAdapter.contains(CURList[i])) {
+                                                GlobalScope.launch { curDao?.insert(CUREntity(CURsymbol = CURList[i].symbol)) }
+                                                userCURList.add(CURList[i].symbol)
+                                                userCURListforAdapter.add(CURList[i])
+                                            }
+                                        }
+                                    } else {
+                                        userCURListforAdapter.clear()
+                                        userCURList.forEach { userSymbol ->
+                                            val cur = CURList.find { it.symbol == userSymbol }
+                                            if (cur != null) userCURListforAdapter.add(
+                                                cur
+                                            )
+                                        }
+                                    }
+                                    //refresh RecyclerAdapter
+                                    BottomSheetAdapter.notifyDataSetChanged()
+                                    //refresh ACTV
+                                    adapterACTV.notifyDataSetChanged()
+
+                                    bottomSheetReady = true
+                                } catch (e: Exception) {
+                                    tv_error.text = e.toString()
+                                    tv_error.visibility = View.VISIBLE
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+    suspend private fun get_data(): String? =
+    withContext(Dispatchers.IO) {
+        val url: HttpUrl = HttpUrl.Builder()
+            .scheme("https")
+            .host("pro-api.coinmarketcap.com")
+            .addPathSegment("v1")
+            .addPathSegment("cryptocurrency")
+            .addPathSegment("listings")
+            .addPathSegment("latest")
+            .addQueryParameter(
+                "limit",
+                "500"
+            )
+            .build()
+        val request = Request.Builder()
+            .url(url)
+            .header("Accepts","application/json")
+            .addHeader("X-CMC_PRO_API_KEY", settings["CoinMarketCupToken"]!!)
+            .build()
+        val resp = client.newCall(request).execute()
+        return@withContext resp.body?.string()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putSerializable("CURList", CURList)
+        outState.putSerializable("dateCURupdate", dateCURupdate)
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        CURList = savedInstanceState.getSerializable("CURList") as ArrayList<CUR>
+        dateCURupdate = savedInstanceState.getSerializable("dateCURupdate") as Date
+        super.onRestoreInstanceState(savedInstanceState)
+    }
 
 }

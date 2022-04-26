@@ -246,7 +246,7 @@ class AllNotification(context: Context, workerParams: WorkerParameters) : Worker
                     val t2 = System.currentTimeMillis() / 1000
                     val tdelta = t2 - value
                     val textTime = DateUtils.formatElapsedTime(tdelta)
-                    if (tdelta > (31 * 60) && internetIsConnected()) {
+                    if (tdelta > (46 * 60) && internetIsConnected()) {
                         if (all_notification.containsKey(name)) all_notification[name]?.put(
                             applicationContext.getString(R.string.no_responce),
                             textTime

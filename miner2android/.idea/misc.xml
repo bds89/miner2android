@@ -5,17 +5,28 @@
       <map>
         <entry key="../../../../../../../layout/custom_preview.xml" value="0.36816720257234725" />
         <entry key="app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.19739583333333333" />
+        <entry key="app/src/main/res/drawable/bottom_top_background.xml" value="0.206" />
         <entry key="app/src/main/res/drawable/cpu_freq.xml" value="0.105" />
+        <entry key="app/src/main/res/drawable/cur__price_background.xml" value="0.225" />
+        <entry key="app/src/main/res/drawable/cur__price_background_down.xml" value="0.225" />
+        <entry key="app/src/main/res/drawable/cur__price_background_up.xml" value="0.225" />
+        <entry key="app/src/main/res/drawable/cur_price_background.xml" value="0.1" />
         <entry key="app/src/main/res/drawable/dialog_bg.xml" value="0.1935" />
         <entry key="app/src/main/res/drawable/dialog_videocard_bg.xml" value="0.1405" />
         <entry key="app/src/main/res/drawable/efficiency.xml" value="0.105" />
+        <entry key="app/src/main/res/drawable/fab_anim.xml" value="0.1605" />
+        <entry key="app/src/main/res/drawable/fab_anim_reverse.xml" value="0.203" />
         <entry key="app/src/main/res/drawable/fan.xml" value="0.105" />
         <entry key="app/src/main/res/drawable/hashrate.xml" value="0.105" />
         <entry key="app/src/main/res/drawable/ic_baseline_add_24.xml" value="0.1935" />
+        <entry key="app/src/main/res/drawable/ic_baseline_add_24_half.xml" value="0.1825" />
+        <entry key="app/src/main/res/drawable/ic_baseline_arrow_drop_up_24.xml" value="0.203" />
         <entry key="app/src/main/res/drawable/ic_baseline_arrow_left_24.xml" value="0.3072916666666667" />
         <entry key="app/src/main/res/drawable/ic_baseline_arrow_right_24.xml" value="0.3072916666666667" />
         <entry key="app/src/main/res/drawable/ic_baseline_color_lens_24.xml" value="0.1405" />
         <entry key="app/src/main/res/drawable/ic_baseline_computer_24.xml" value="0.1405" />
+        <entry key="app/src/main/res/drawable/ic_baseline_lock_24.xml" value="0.206" />
+        <entry key="app/src/main/res/drawable/ic_baseline_lock_open_24.xml" value="0.206" />
         <entry key="app/src/main/res/drawable/ic_baseline_notifications_24.xml" value="0.2965" />
         <entry key="app/src/main/res/drawable/ic_baseline_settings_24.xml" value="0.1405" />
         <entry key="app/src/main/res/drawable/pcitembg.xml" value="0.1405" />
@@ -32,9 +43,13 @@
         <entry key="app/src/main/res/font/coda.xml" value="0.3130801687763713" />
         <entry key="app/src/main/res/font/main_font.xml" value="1.0" />
         <entry key="app/src/main/res/layout/activity_item_edit.xml" value="0.22" />
-        <entry key="app/src/main/res/layout/activity_main.xml" value="0.33" />
+        <entry key="app/src/main/res/layout/activity_main (Конфликтующая копия с компьютера bds89-HP-ProBook-450-G7 2022-04-22).xml" value="0.14273504273504273" />
+        <entry key="app/src/main/res/layout/activity_main.xml" value="0.25" />
         <entry key="app/src/main/res/layout/activity_node_info.xml" value="0.33" />
         <entry key="app/src/main/res/layout/activity_settings.xml" value="0.33" />
+        <entry key="app/src/main/res/layout/bottom_sheet (Конфликтующая копия с компьютера bds89-HP-ProBook-450-G7 2022-04-22).xml" value="0.14273504273504273" />
+        <entry key="app/src/main/res/layout/bottom_sheet.xml" value="0.33" />
+        <entry key="app/src/main/res/layout/bottom_sheet_item.xml" value="0.33" />
         <entry key="app/src/main/res/layout/dialog_lang.xml" value="0.5" />
         <entry key="app/src/main/res/layout/dialog_language.xml" value="0.35625" />
         <entry key="app/src/main/res/layout/dialog_saveLoad.xml" value="0.33" />

@@ -196,20 +196,6 @@ class NodeInfoActivity : AppCompatActivity() {
         startActivity(i)
     }
 
-//    fun save(saveData: Any, file:String) {
-//        val dir: File = filesDir
-//        try {
-//            val file = FileOutputStream("$dir/${file}")
-//            val outStream = ObjectOutputStream(file)
-//            outStream.writeObject(saveData)
-//            outStream.close()
-//            file.close()
-//        } catch (e: Exception) {
-//            val text = getString(R.string.cantsavedata)
-//            Toast.makeText(this, "$text: $e", Toast.LENGTH_SHORT).show()
-//        }
-//    }
-
     override fun onBackPressed() {
         val editIntent = Intent()
         editIntent.putExtra(const.KEY_PCList, PCList)

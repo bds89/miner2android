@@ -20,4 +20,9 @@
     <color name="dialogBG">#002527</color>
     <color name="dialogText">#FFFFFF</color>
     <color name="dialogButton">#FFD600</color>
+    <color name="cur">#424242</color>
+    <color name="curUp">#00BF7B</color>
+    <color name="curDown">#E30953</color>
+    <color name="text_curprice">#FFFFFF</color>
+    <color name="bottomTopBar">#000000</color>
 </resources>

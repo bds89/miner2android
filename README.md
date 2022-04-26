@@ -2,9 +2,8 @@
 
 Cбор информации с ваших майнинг ферм.
 
-<img src="screenshots/1.jpg" width="300"> <img src="screenshots/2.png" width="300"> 
-
-<img src="screenshots/Screenshot_20220408-143508_Miner2android.jpg" width="300"> <img src="screenshots/4.jpg" width="300">
+<img src="screenshots/1.jpg" width="250"> <img src="screenshots/2.png" width="250"> 
+<img src="screenshots/3.jpg" width="250"> <img src="screenshots/4.jpg" width="250"> <img src="screenshots/5.jpg" width="250">
 
 ## Изменения
 
@@ -30,7 +29,11 @@ Cбор информации с ваших майнинг ферм.
 - Исправления
 </details>
 </details>
+<details>
+  <summary>1.3</summary>
 
+- Курсы валют, с [CoinMarketCup](https://coinmarketcap.com), в настройках необходимо ввести токен API Token. Бесплатный токен можно получить на [CoinMarketCup](https://coinmarketcap.com/api/)
+</details>
 
 ## Описание
 

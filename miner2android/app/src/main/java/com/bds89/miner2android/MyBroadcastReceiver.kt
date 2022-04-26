@@ -26,6 +26,7 @@ class MyBroadcastReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
             }
             all_notification.remove(title)
+            if (title == "") all_notification.clear()
             //try to load last_resonce_time
             try {
                 val file = FileInputStream("$dir/${const.KEY_SaveLastResponce}")
@@ -36,6 +37,7 @@ class MyBroadcastReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
             }
             last_resonce_time.remove(title)
+            if (title == "") last_resonce_time.clear()
 
             //save all_notification
             try {

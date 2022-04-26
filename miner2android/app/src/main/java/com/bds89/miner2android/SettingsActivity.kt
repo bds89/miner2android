@@ -11,8 +11,11 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.widget.doOnTextChanged
+import androidx.lifecycle.lifecycleScope
 import androidx.work.*
 import com.bds89.miner2android.BuildConfig.APPLICATION_ID
 import com.bds89.miner2android.databinding.ActivitySettingsBinding
@@ -22,16 +25,16 @@ import com.bds89.miner2android.forRoom.*
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.*
-import okhttp3.Dispatcher
+import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.*
+import java.lang.Math.round
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
+import kotlin.math.roundToInt
 
 
 class SettingsActivity : AppCompatActivity() {
@@ -44,6 +47,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var getFileLauncher: ActivityResultLauncher<Intent>
     private lateinit var PCList :ArrayList<PC>
     private lateinit var limits:ArrayList<LimitEntity?>
+
+    private val client = OkHttpClient()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,6 +74,7 @@ class SettingsActivity : AppCompatActivity() {
         dialog_saveload_inflate()
         LimitsNotifycationWork()
         init_onclicks()
+        token()
     }
 
     override fun onPause() {
@@ -122,6 +128,7 @@ class SettingsActivity : AppCompatActivity() {
         val db: AppDatabase = App.instance.database
         val PCsDao = db.pcsDao()
         val limitDao = db.LimitDao()
+        val curDao = db.CURDao()
 
         val dir: File = filesDir
         // Передайте ссылку на разметку
@@ -143,12 +150,17 @@ class SettingsActivity : AppCompatActivity() {
                     //Limits
                     val limits = async { withContext(Dispatchers.IO) { ArrayList(limitDao?.getAll()) } }.await()
                     all_settings.put("limits", limits)
+                    //CurList
+                    val curList = async { withContext(Dispatchers.IO) { ArrayList(curDao?.getAll()) } }.await()
+                    all_settings.put("curList", curList)
+
                     //create file
                     val fileSave = FileOutputStream("$dir/m2a_settings")
                     val outStream = ObjectOutputStream(fileSave)
                     outStream.writeObject(all_settings)
                     outStream.close()
                     fileSave.close()
+
                     //create URI
                     val file = File("$dir/m2a_settings")
                     val uri = FileProvider.getUriForFile(
@@ -249,8 +261,18 @@ class SettingsActivity : AppCompatActivity() {
                                     }
                                 }
                             }
+                            //curlist
+                            if (all_settings.containsKey("curList") && all_settings["curList"] != false && all_settings["curList"] != null) {
+                                val curList = all_settings["curList"]!! as ArrayList<CUREntity?>
+
+                                GlobalScope.launch(Dispatchers.IO) {
+                                    curDao?.deleteAll()
+                                    curList.forEach {
+                                        curDao?.insert(it)
+                                    }
+                                }
+                            }
                         } catch (e: Exception) {
-                            Log.e("ml", e.toString())
                             Toast.makeText(this, "Can't load this settings", Toast.LENGTH_LONG).show()
                             return@registerForActivityResult
                         }
@@ -342,6 +364,72 @@ class SettingsActivity : AppCompatActivity() {
     }
 
 
+    private fun token() {
+        with(binding) {
+            if (settings.containsKey("CoinMarketCupToken")) {
+                lifecycleScope.launch { check_token(settings["CoinMarketCupToken"]!!) }
+                etToken.setText(settings["CoinMarketCupToken"])
+            }
+            etToken.doOnTextChanged { text, start, before, count -> run {
+                if (!text.isNullOrEmpty() && text.length > 30) lifecycleScope.launch {
+                    if (check_token(text.toString())) {
+                        settings.put("CoinMarketCupToken", text.toString())
+                        save(settings, const.KEY_SaveSettings)
+                    }
+                    }
+                if (text.isNullOrEmpty()) {
+                    settings.remove("CoinMarketCupToken")
+                    save(settings, const.KEY_SaveSettings)
+                    binding.ivTokenCheck.background = AppCompatResources.getDrawable(this@SettingsActivity, R.drawable.cur__price_background)
+                    binding.pbToken.progress = 0
+                }
+            } }
+
+        }
+    }
+    suspend fun check_token(APIkey:String):Boolean {
+        lateinit var resp: Response
+        var success = true
+        withContext(Dispatchers.IO) {
+            val url: HttpUrl = HttpUrl.Builder()
+                .scheme("https")
+                .host("pro-api.coinmarketcap.com")
+                .addPathSegment("v1")
+                .addPathSegment("key")
+                .addPathSegment("info")
+                .build()
+            val request = Request.Builder()
+                .url(url)
+                .header("Accepts", "application/json")
+                .addHeader("X-CMC_PRO_API_KEY", APIkey)
+                .build()
+            resp = client.newCall(request).execute()
+        }
+        withContext(Dispatchers.Main) {
+            try {
+                if (resp.body == null) throw Exception("No response")
+                val info = JSONObject(resp.body?.string())
+                if (info.getJSONObject("status").getInt("error_code") != 0) {
+                    throw Exception(
+                        info.getJSONObject("status")
+                            .getString("error_message")
+                    )
+                } else {
+                    binding.ivTokenCheck.background = AppCompatResources.getDrawable(this@SettingsActivity, R.drawable.cur__price_background_up)
+                    val data = info.getJSONObject("data")
+                    val plan = data.getJSONObject("plan").getInt("credit_limit_daily")
+                    val usage = data.getJSONObject("usage").getJSONObject("current_day").getInt("credits_used")
+                    binding.pbToken.max = plan
+                    binding.pbToken.progress = usage
+                }
+            } catch (e: Exception) {
+                binding.ivTokenCheck.background = AppCompatResources.getDrawable(this@SettingsActivity, R.drawable.cur__price_background_down)
+                success = false
+            }
+        }
+        return success
+    }
+
     private fun send_limits(pc: PC):Boolean {
         val client = OkHttpClient()
         try {
@@ -398,12 +486,11 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if (this::PCList.isInitialized) {
-            val editIntent = Intent()
-            editIntent.putExtra(const.KEY_PCList, PCList)
-            setResult(RESULT_OK, editIntent)
-            finish()
-        }
+        val editIntent = Intent()
+        if (this::PCList.isInitialized) editIntent.putExtra(const.KEY_PCList, PCList)
+        editIntent.putExtra(const.KEY_SaveSettings, settings)
+        setResult(RESULT_OK, editIntent)
+        finish()
         super.onBackPressed()
     }
 }

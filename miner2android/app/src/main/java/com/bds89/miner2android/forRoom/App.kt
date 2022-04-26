@@ -12,6 +12,7 @@ class App : Application() {
         super.onCreate()
         instance = this
         database = Room.databaseBuilder(this, AppDatabase::class.java, "database")
+            .addMigrations(AppDatabase.MIGRATION_1_2)
             .build()
     }
 

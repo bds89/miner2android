@@ -23,6 +23,7 @@ import androidx.lifecycle.LifecycleCoroutineScope
 import com.bds89.miner2android.forRoom.App
 import com.bds89.miner2android.forRoom.AppDatabase
 import com.bds89.miner2android.forRoom.PCsEntity
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.*
 import okhttp3.Dispatcher
 import java.io.*
@@ -62,6 +63,7 @@ class PCadapter(
     }
 
     override fun onBindViewHolder(holder: PCHolder, position: Int) {
+
         with(holder){
             with(binding){
 
