@@ -1,16 +1,22 @@
 package com.bds89.miner2android
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.content.res.ColorStateList
+import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
+import androidx.core.view.marginLeft
 import androidx.recyclerview.widget.RecyclerView
 import com.bds89.miner2android.databinding.BottomSheetItemBinding
 import kotlin.math.pow
 import kotlin.math.round
+
 
 class BottomSheetAdapter(var curList: ArrayList<CUR>): RecyclerView.Adapter<BottomSheetAdapter.CurHolder>() {
 
@@ -25,6 +31,27 @@ class BottomSheetAdapter(var curList: ArrayList<CUR>): RecyclerView.Adapter<Bott
         0.001 to 7,
         0.0001 to 8,
     )
+
+    val roundWithSimvol = mapOf<Float, ArrayList<Any>>(
+        10f.pow(12) to arrayListOf(10f.pow(9), " B"),
+        10f.pow(9) to arrayListOf(10f.pow(6), " M"),
+        10f.pow(6) to arrayListOf(10f.pow(3), " K"),
+        10f.pow(3) to arrayListOf(10f.pow(0), " "),
+    )
+
+    private fun myround(value:Any?):String {
+        val vdouble = value.toString().toDoubleOrNull() ?: return "-"
+        var output = ""
+        run breaking@{
+            roundWithSimvol.forEach {
+                if (vdouble > it.key) {
+                    output = (round ((vdouble / it.value[0] as Float)*10)/10).toString() + it.value[1]
+                    return@breaking
+                }
+            }
+        }
+        return output
+    }
 
     inner class CurHolder(item: View): RecyclerView.ViewHolder(item) {
         val binding = BottomSheetItemBinding.bind(item)
@@ -65,7 +92,45 @@ class BottomSheetAdapter(var curList: ArrayList<CUR>): RecyclerView.Adapter<Bott
                     }
                 }
 
-                tvMarketcup.text = (round(curList[position].market_cap/1000000)).toString() + " M$"
+                tvMarketcup.text = myround(curList[position].market_cap) + "$"
+
+                //hiden parameters
+                var firstClick = true
+                llMain.setOnClickListener {
+
+                    if (cvHideble.visibility == View.GONE) {
+                        tvVolume2.text = myround(curList[position].volume_24h) + "$"
+
+                        val chVolume = (round(curList[position].volume_change_24h*100)/100)
+                        tvVolume3.text = chVolume.toString() + "%"
+                        if (chVolume > 0.2) tvVolume3.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.curUp)))
+                        if (chVolume < -0.2) tvVolume3.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.curDown)))
+
+                        tvCirculating.text = myround(curList[position].circulating_supply)
+                        tvTotal.text = myround(curList[position].total_supply)
+                        tvMax.text = myround(curList[position].max_supply)
+
+
+                        cvHideble.visibility = View.VISIBLE
+                        cvHideble.scaleY = 0f
+                        if (!firstClick) cvHideble.x = (0+cvHideble.marginLeft).toFloat()
+                        firstClick = false
+                        cvHideble.animate().scaleY(1f).setDuration(300).start()
+
+                    }
+                    else {
+                        cvHideble.animate()
+                            .x(cvHideble.width.toFloat())
+                            .setDuration(200)
+                            .setListener(object : AnimatorListenerAdapter() {
+                                override fun onAnimationEnd(animation: Animator) {
+                                    super.onAnimationEnd(animation)
+                                    if (cvHideble.x == cvHideble.width.toFloat()) cvHideble.visibility = View.GONE
+                                }
+                            })
+
+                    }
+                }
             }
         }
     }

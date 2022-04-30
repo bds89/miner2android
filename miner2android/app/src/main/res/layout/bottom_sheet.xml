@@ -28,8 +28,8 @@
 
         <ImageView
             android:id="@+id/iv_lock"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
             android:layout_weight="1"
             app:srcCompat="@drawable/ic_baseline_lock_24"
             android:layout_gravity="right"
@@ -44,25 +44,34 @@
     <LinearLayout
         android:id="@+id/ll_top_bottom_bar"
         android:layout_width="match_parent"
-        android:layout_height="30dp"
+        android:layout_height="25dp"
         android:orientation="horizontal">
 
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="12dp"
+            android:autoSizeMaxTextSize="15dp"
             android:layout_weight="4"
             android:text="@string/active"
             android:layout_marginLeft="10dp"/>
 
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="12dp"
+            android:autoSizeMaxTextSize="15dp"
             android:layout_weight="3"
             android:text="@string/price_marketcup" />
 
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="12dp"
+            android:autoSizeMaxTextSize="15dp"
             android:layout_weight="0.6"
             android:text="@string/change_24h_1h" />
     </LinearLayout>
@@ -98,6 +107,7 @@
         android:id="@+id/autocomplete"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textSize="15dp"
         android:completionThreshold="2"
         android:hint="@string/name_or_ticker"
         app:layout_constraintLeft_toLeftOf="parent"

@@ -6,99 +6,296 @@
     android:layout_height="wrap_content">
 
     <LinearLayout
+        android:id="@+id/ll_main"
         android:layout_width="match_parent"
-        android:layout_height="65dp"
-        android:layout_marginBottom="5dp"
-        android:orientation="horizontal"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="2"
-            android:orientation="vertical"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="10dp">
+            android:layout_height="65dp"
+            android:layout_marginBottom="5dp"
+            android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/tv_symbol"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="top"
-                android:text="TextView"
-                android:textSize="20sp"
-                android:textColor="@color/text_curprice"/>
-            <TextView
-                android:id="@+id/tv_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="bottom"
-                android:text="TextView"
-                android:textSize="14sp"
-                android:layout_marginTop="5dp"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="2"
-            android:orientation="vertical"
-            android:layout_marginTop="10dp">
-
-            <TextView
-                android:id="@+id/tv_price"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="top"
-                android:text="TextView"
-                android:textSize="20sp"
-                android:textColor="@color/text_curprice"/>
-
-            <TextView
-                android:id="@+id/tv_marketcup"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:gravity="bottom"
-                android:text="tv"
-                android:textSize="14sp"
-                app:autoSizeMinTextSize="10dp"
-                app:autoSizeTextType="uniform" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="2.2"
-            android:orientation="vertical"
-            android:layout_marginTop="10dp">
-
-            <TextView
-                android:id="@+id/tv_change24"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginRight="10dp"
+                android:layout_height="match_parent"
                 android:layout_marginLeft="10dp"
-                android:layout_marginTop="2dp"
-                android:background="@drawable/cur__price_background"
-                android:gravity="center"
-                android:text="TextView"
-                android:textSize="20sp"
-                android:textColor="@color/text_curprice"/>
-            <TextView
-                android:id="@+id/tv_change1"
+                android:layout_marginTop="10dp"
+                android:layout_weight="2"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_symbol"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:autoSizeMaxTextSize="20dp"
+                    android:autoSizeMinTextSize="16dp"
+                    android:autoSizeTextType="uniform"
+                    android:layout_gravity="top"
+                    android:text="TextView"
+                    android:textColor="@color/text_curprice"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:id="@+id/tv_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:autoSizeMaxTextSize="14dp"
+                    android:autoSizeMinTextSize="10dp"
+                    android:autoSizeTextType="uniform"
+                    android:layout_marginTop="5dp"
+                    android:gravity="bottom"
+                    android:text="TextView"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="10dp"
+                android:layout_weight="2"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_price"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:autoSizeMaxTextSize="20dp"
+                    android:autoSizeMinTextSize="16dp"
+                    android:autoSizeTextType="uniform"
+                    android:layout_gravity="top"
+                    android:text="TextView"
+                    android:textColor="@color/text_curprice"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:id="@+id/tv_marketcup"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:autoSizeMaxTextSize="14dp"
+                    android:autoSizeMinTextSize="10dp"
+                    android:autoSizeTextType="uniform"
+                    android:layout_marginTop="5dp"
+                    android:gravity="bottom"
+                    android:text="tv"
+                    android:textSize="14sp"
+                    app:autoSizeMinTextSize="10dp"
+                    app:autoSizeTextType="uniform" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="10dp"
+                android:layout_weight="2.2"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_change24"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:autoSizeMaxTextSize="20dp"
+                    android:autoSizeMinTextSize="16dp"
+                    android:autoSizeTextType="uniform"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginRight="10dp"
+                    android:background="@drawable/cur__price_background"
+                    android:gravity="center"
+                    android:text="TextView"
+                    android:textColor="@color/text_curprice"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:id="@+id/tv_change1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:autoSizeMaxTextSize="14dp"
+                    android:autoSizeMinTextSize="10dp"
+                    android:autoSizeTextType="uniform"
+                    android:layout_marginLeft="25dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginRight="25dp"
+                    android:gravity="center"
+                    android:text="TextView"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cv_hideble"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="20dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            app:cardBackgroundColor="@color/bottomTopBar"
+            app:cardElevation="5dp"
+            app:cardCornerRadius="10dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="25dp"
-                android:layout_marginLeft="25dp"
+                android:orientation="vertical">
+                <!--                volume-->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginBottom="10dp"
+                    android:orientation="horizontal">
 
-                android:gravity="center"
-                android:text="TextView"
-                android:textSize="14sp"
-                android:layout_marginTop="5dp" />
-        </LinearLayout>
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginLeft="5dp"
+                        android:layout_weight="2"
+                        android:autoSizeMaxTextSize="14dp"
+                        android:autoSizeMinTextSize="10dp"
+                        android:autoSizeTextType="uniform"
+                        android:gravity="left"
+                        android:text="@string/volume_24h"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tv_volume2"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="2"
+                        android:autoSizeMaxTextSize="14dp"
+                        android:autoSizeMinTextSize="10dp"
+                        android:autoSizeTextType="uniform"
+                        android:gravity="left"
+                        android:text="TextView"
+                        android:textColor="@color/text_curprice"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tv_volume3"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="2.2"
+                        android:autoSizeMaxTextSize="14dp"
+                        android:autoSizeMinTextSize="10dp"
+                        android:autoSizeTextType="uniform"
+                        android:gravity="center"
+                        android:text="TextView"
+                        android:textColor="@color/text_curprice"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <!--                names supply-->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginLeft="5dp"
+                        android:layout_marginTop="5dp"
+                        android:layout_weight="2"
+                        android:autoSizeMaxTextSize="14dp"
+                        android:autoSizeMinTextSize="10dp"
+                        android:autoSizeTextType="uniform"
+                        android:gravity="left"
+                        android:text="@string/circulating"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="5dp"
+                        android:layout_weight="2"
+                        android:autoSizeMaxTextSize="14dp"
+                        android:autoSizeMinTextSize="10dp"
+                        android:autoSizeTextType="uniform"
+                        android:gravity="left"
+                        android:text="@string/total_supply"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginLeft="10dp"
+                        android:layout_weight="2.2"
+                        android:autoSizeMaxTextSize="14dp"
+                        android:autoSizeMinTextSize="10dp"
+                        android:autoSizeTextType="uniform"
+                        android:gravity="left"
+                        android:text="@string/max_supply"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <!--                volues supply-->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="5dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tv_circulating"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginLeft="5dp"
+                        android:layout_marginTop="5dp"
+                        android:layout_weight="2"
+                        android:autoSizeMaxTextSize="14dp"
+                        android:autoSizeMinTextSize="10dp"
+                        android:autoSizeTextType="uniform"
+                        android:gravity="left"
+                        android:text="Circulating"
+                        android:textColor="@color/text_curprice"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tv_total"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="5dp"
+                        android:layout_weight="2"
+                        android:autoSizeMaxTextSize="14dp"
+                        android:autoSizeMinTextSize="10dp"
+                        android:autoSizeTextType="uniform"
+                        android:gravity="left"
+                        android:text="Total supply"
+                        android:textColor="@color/text_curprice"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tv_max"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginLeft="10dp"
+                        android:layout_weight="2.2"
+                        android:autoSizeMaxTextSize="14dp"
+                        android:autoSizeMinTextSize="10dp"
+                        android:autoSizeTextType="uniform"
+                        android:gravity="left"
+                        android:text="Max supply"
+                        android:textColor="@color/text_curprice"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
     </LinearLayout>
 

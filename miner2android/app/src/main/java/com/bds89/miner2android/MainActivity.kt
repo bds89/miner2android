@@ -535,37 +535,71 @@ class MainActivity : AppCompatActivity() {
                                             //create CURList
                                             val data = info.getJSONArray("data")
                                             NamesAndTickers.clear()
-                                            for (i in 0 until data.length() - 1) {
-                                                var oneCUR = CUR(
-                                                    name = data.getJSONObject(i).getString("name"),
-                                                    symbol = data.getJSONObject(i)
-                                                        .getString("symbol"),
-                                                    price = data.getJSONObject(i)
-                                                        .getJSONObject("quote").getJSONObject("USD")
-                                                        .getDouble("price"),
-                                                    percent_change_1h = data.getJSONObject(i)
-                                                        .getJSONObject("quote").getJSONObject("USD")
-                                                        .getDouble("percent_change_1h"),
-                                                    percent_change_24h = data.getJSONObject(i)
-                                                        .getJSONObject("quote").getJSONObject("USD")
-                                                        .getDouble("percent_change_24h"),
-                                                    market_cap = data.getJSONObject(i)
-                                                        .getJSONObject("quote").getJSONObject("USD")
-                                                        .getDouble("market_cap")
-                                                )
-                                                CURList.add(oneCUR)
-                                                //create name for autocompletetextview
-                                                NamesAndTickers.add(
-                                                    "${
-                                                        data.getJSONObject(i).getString("symbol")
-                                                    } | ${data.getJSONObject(i).getString("name")}" +
-                                                            " | ${round((data.getJSONObject(i)
-                                                                .getJSONObject("quote").getJSONObject("USD")
-                                                                .getDouble("price"))*100)/100}$" +
-                                                            " | ${round((data.getJSONObject(i)
-                                                                .getJSONObject("quote").getJSONObject("USD")
-                                                                .getDouble("percent_change_24h"))*100)/100}%"
-                                                )
+                                            withContext(Dispatchers.Default) {
+                                                for (i in 0 until data.length() - 1) {
+                                                    var oneCUR = CUR(
+                                                        name = data.getJSONObject(i)
+                                                            .getString("name"),
+                                                        symbol = data.getJSONObject(i)
+                                                            .getString("symbol"),
+                                                        price = data.getJSONObject(i)
+                                                            .getJSONObject("quote")
+                                                            .getJSONObject("USD")
+                                                            .getDouble("price"),
+                                                        percent_change_1h = data.getJSONObject(i)
+                                                            .getJSONObject("quote")
+                                                            .getJSONObject("USD")
+                                                            .getDouble("percent_change_1h"),
+                                                        percent_change_24h = data.getJSONObject(i)
+                                                            .getJSONObject("quote")
+                                                            .getJSONObject("USD")
+                                                            .getDouble("percent_change_24h"),
+                                                        market_cap = data.getJSONObject(i)
+                                                            .getJSONObject("quote")
+                                                            .getJSONObject("USD")
+                                                            .getDouble("market_cap"),
+                                                        total_supply = data.getJSONObject(i)
+                                                            .getString("total_supply"),
+                                                        max_supply = data.getJSONObject(i)
+                                                            .getString("max_supply"),
+                                                        circulating_supply = data.getJSONObject(i)
+                                                            .getString("circulating_supply"),
+                                                        volume_24h = data.getJSONObject(i)
+                                                            .getJSONObject("quote")
+                                                            .getJSONObject("USD")
+                                                            .getDouble("volume_24h"),
+                                                        volume_change_24h = data.getJSONObject(i)
+                                                            .getJSONObject("quote")
+                                                            .getJSONObject("USD")
+                                                            .getDouble("volume_change_24h"),
+                                                    )
+                                                    CURList.add(oneCUR)
+                                                    //create name for autocompletetextview
+                                                    NamesAndTickers.add(
+                                                        "${
+                                                            data.getJSONObject(i)
+                                                                .getString("symbol")
+                                                        } | ${
+                                                            data.getJSONObject(i).getString("name")
+                                                        }" +
+                                                                " | ${
+                                                                    round(
+                                                                        (data.getJSONObject(i)
+                                                                            .getJSONObject("quote")
+                                                                            .getJSONObject("USD")
+                                                                            .getDouble("price")) * 100
+                                                                    ) / 100
+                                                                }$" +
+                                                                " | ${
+                                                                    round(
+                                                                        (data.getJSONObject(i)
+                                                                            .getJSONObject("quote")
+                                                                            .getJSONObject("USD")
+                                                                            .getDouble("percent_change_24h")) * 100
+                                                                    ) / 100
+                                                                }%"
+                                                    )
+                                                }
                                             }
                                         }
                                     }

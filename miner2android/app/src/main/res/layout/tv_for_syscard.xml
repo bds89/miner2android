@@ -34,16 +34,23 @@
             <TextView
                 android:id="@+id/tv_properti"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="25dp"
+                android:autoSizeMaxTextSize="18dp"
+                android:autoSizeMinTextSize="12dp"
+                android:autoSizeTextType="uniform"
                 android:layout_marginLeft="8dp"
                 android:layout_marginTop="4dp"
+                android:layout_weight="3"
                 android:text="TextView"
                 android:textSize="18sp" />
 
             <TextView
                 android:id="@+id/tv_value"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="25dp"
+                android:autoSizeMaxTextSize="18dp"
+                android:autoSizeMinTextSize="12dp"
+                android:autoSizeTextType="uniform"
                 android:layout_marginTop="4dp"
                 android:layout_marginRight="16dp"
                 android:layout_weight="1"

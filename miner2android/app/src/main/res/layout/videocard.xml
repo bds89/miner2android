@@ -61,11 +61,14 @@
                 <TextView
                     android:id="@+id/tv_name_videocard"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="25dp"
                     android:layout_marginStart="16dp"
-                    android:gravity="center"
+                    android:gravity="center|start"
                     android:text="Videocard info"
                     android:textSize="20sp"
+                    android:autoSizeTextType="uniform"
+                    android:autoSizeMinTextSize="12dp"
+                    android:autoSizeMaxTextSize="20dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/imageView"
                     app:layout_constraintTop_toTopOf="parent"
@@ -74,7 +77,11 @@
                 <TextView
                     android:id="@+id/tv_vendor_videocard"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="25dp"
+                    android:autoSizeTextType="uniform"
+                    android:autoSizeMinTextSize="12dp"
+                    android:autoSizeMaxTextSize="16dp"
+                    android:gravity="center|start"
                     android:layout_marginStart="16dp"
                     android:text="Unknown vendor"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -83,30 +90,6 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!--            <LinearLayout-->
-            <!--                android:id="@+id/ll_with_tv"-->
-            <!--                android:layout_width="match_parent"-->
-            <!--                android:layout_height="match_parent"-->
-            <!--                android:orientation="horizontal">-->
-
-            <!--                <TextView-->
-            <!--                    android:id="@+id/tv_property"-->
-            <!--                    android:layout_width="wrap_content"-->
-            <!--                    android:layout_height="wrap_content"-->
-            <!--                    android:layout_marginLeft="20dp"-->
-            <!--                    android:layout_weight="1"-->
-            <!--                    android:gravity="left"-->
-            <!--                    android:text="TextView" />-->
-
-            <!--                <TextView-->
-            <!--                    android:id="@+id/tv_value"-->
-            <!--                    android:layout_width="wrap_content"-->
-            <!--                    android:layout_height="wrap_content"-->
-            <!--                    android:layout_marginRight="20dp"-->
-            <!--                    android:layout_weight="1"-->
-            <!--                    android:gravity="right"-->
-            <!--                    android:text="TextView" />-->
-            <!--            </LinearLayout>-->
         </LinearLayout>
 
     </androidx.cardview.widget.CardView>

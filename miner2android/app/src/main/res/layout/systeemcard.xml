@@ -54,10 +54,13 @@
                     android:id="@+id/textView"
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
+                    android:autoSizeTextType="uniform"
+                    android:autoSizeMinTextSize="12dp"
+                    android:autoSizeMaxTextSize="20dp"
                     android:layout_marginLeft="16dp"
                     android:layout_marginTop="8dp"
                     android:layout_marginBottom="8dp"
-                    android:gravity="center|left"
+                    android:gravity="center|start"
                     android:text="@string/system_info"
                     android:textSize="20sp" />
 

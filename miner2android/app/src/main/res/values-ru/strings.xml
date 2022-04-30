@@ -78,6 +78,10 @@
     <string name="active">Валюта</string>
     <string name="price_marketcup">Цена/Капитализация</string>
     <string name="change_24h_1h">Изменение 24ч/1ч</string>
+    <string name="volume_24h">Объем 24ч</string>
+    <string name="circulating">В обращении:</string>
+    <string name="total_supply">Выпущено:</string>
+    <string name="max_supply">Максимум:</string>
 
 
 </resources>

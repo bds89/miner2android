@@ -5,7 +5,8 @@
     android:id="@+id/drawer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity"
+    tools:openDrawer="left">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
@@ -108,9 +109,11 @@
                 <TextView
                     android:id="@+id/tv_appname"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_marginLeft="10dp"
                     android:layout_marginTop="10dp"
+                    android:autoSizeMinTextSize="16dp"
+                    android:autoSizeTextType="uniform"
                     android:text="Miner2android"
                     android:textSize="30sp" />
 
@@ -146,19 +149,18 @@
                     <ImageView
                         android:id="@+id/iv_menu_item"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:layout_marginStart="10dp"
-                        android:layout_marginTop="4dp"
-                        android:layout_marginBottom="4dp"
                         app:srcCompat="@drawable/ic_baseline_settings_24" />
 
                     <TextView
                         android:id="@+id/tv_menu_item"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="12dp"
                         android:layout_marginStart="16dp"
-                        android:layout_marginTop="4dp"
-                        android:layout_marginBottom="4dp"
+                        android:gravity="center_vertical"
                         android:text="@string/settings"
                         android:textSize="16sp" />
                 </LinearLayout>

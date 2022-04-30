@@ -10,6 +10,7 @@
         <entry key="app/src/main/res/drawable/cur__price_background.xml" value="0.225" />
         <entry key="app/src/main/res/drawable/cur__price_background_down.xml" value="0.225" />
         <entry key="app/src/main/res/drawable/cur__price_background_up.xml" value="0.225" />
+        <entry key="app/src/main/res/drawable/cur_card_bg_gradient.xml" value="0.206" />
         <entry key="app/src/main/res/drawable/cur_price_background.xml" value="0.1" />
         <entry key="app/src/main/res/drawable/dialog_bg.xml" value="0.1935" />
         <entry key="app/src/main/res/drawable/dialog_videocard_bg.xml" value="0.1405" />
@@ -42,9 +43,10 @@
         <entry key="app/src/main/res/font-v26/main_font.xml" value="0.35833333333333334" />
         <entry key="app/src/main/res/font/coda.xml" value="0.3130801687763713" />
         <entry key="app/src/main/res/font/main_font.xml" value="1.0" />
+        <entry key="app/src/main/res/layout-v26/activity_main.xml" value="0.35625" />
         <entry key="app/src/main/res/layout/activity_item_edit.xml" value="0.22" />
         <entry key="app/src/main/res/layout/activity_main (Конфликтующая копия с компьютера bds89-HP-ProBook-450-G7 2022-04-22).xml" value="0.14273504273504273" />
-        <entry key="app/src/main/res/layout/activity_main.xml" value="0.25" />
+        <entry key="app/src/main/res/layout/activity_main.xml" value="0.5" />
         <entry key="app/src/main/res/layout/activity_node_info.xml" value="0.33" />
         <entry key="app/src/main/res/layout/activity_settings.xml" value="0.33" />
         <entry key="app/src/main/res/layout/bottom_sheet (Конфликтующая копия с компьютера bds89-HP-ProBook-450-G7 2022-04-22).xml" value="0.14273504273504273" />
@@ -63,7 +65,7 @@
         <entry key="app/src/main/res/layout/menu_pc_item.xml" value="0.5" />
         <entry key="app/src/main/res/layout/node_info_item.xml" value="0.5" />
         <entry key="app/src/main/res/layout/node_info_videocard.xml" value="0.5" />
-        <entry key="app/src/main/res/layout/pc_item.xml" value="0.5" />
+        <entry key="app/src/main/res/layout/pc_item.xml" value="0.33" />
         <entry key="app/src/main/res/layout/systeemcard.xml" value="0.33" />
         <entry key="app/src/main/res/layout/systeemcard_tv.xml" value="0.5" />
         <entry key="app/src/main/res/layout/tv.xml" value="0.5" />

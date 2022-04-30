@@ -77,4 +77,8 @@
     <string name="active">Active</string>
     <string name="price_marketcup">Price/MarketCup</string>
     <string name="change_24h_1h">Change 24h/1h</string>
+    <string name="volume_24h">Volume 24h</string>
+    <string name="circulating">Circulating:</string>
+    <string name="total_supply">Total supply:</string>
+    <string name="max_supply">Max supply:</string>
 </resources>
