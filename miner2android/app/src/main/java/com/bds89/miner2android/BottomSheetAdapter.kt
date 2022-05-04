@@ -99,6 +99,10 @@ class BottomSheetAdapter(var curList: ArrayList<CUR>): RecyclerView.Adapter<Bott
                 llMain.setOnClickListener {
 
                     if (cvHideble.visibility == View.GONE) {
+                        tvCmc.text = curList[position].cmc_rank.toString()
+
+                        tvTags.text = curList[position].tags
+
                         tvVolume2.text = myround(curList[position].volume_24h) + "$"
 
                         val chVolume = (round(curList[position].volume_change_24h*100)/100)

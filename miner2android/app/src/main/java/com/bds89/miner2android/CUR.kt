@@ -13,7 +13,9 @@ data class CUR(
     val max_supply:String,
     val circulating_supply:String,
     val volume_24h:Double,
-    val volume_change_24h: Double
+    val volume_change_24h: Double,
+    val cmc_rank:Int,
+    val tags:String,
 ) :Serializable {
 
 }

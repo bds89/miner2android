@@ -510,7 +510,7 @@ class MainActivity : AppCompatActivity() {
                                             }
                                         }
                                     }
-                                    if (CURList.isNullOrEmpty() || (dateCURupdate.time < System.currentTimeMillis() - 30000)) {
+                                    if (CURList.isNullOrEmpty() || (dateCURupdate.time < System.currentTimeMillis() - 60000)) {
                                         if (settings["CoinMarketCupToken"].isNullOrEmpty()) throw Exception("No CoinMarketCupToken")
                                         CURList.clear()
                                         responce = get_data()
@@ -537,6 +537,19 @@ class MainActivity : AppCompatActivity() {
                                             NamesAndTickers.clear()
                                             withContext(Dispatchers.Default) {
                                                 for (i in 0 until data.length() - 1) {
+                                                    var tags = ""
+                                                    val tagsArray = data.getJSONObject(i).getJSONArray("tags")
+                                                    run breaking@{
+                                                        for (i in 0 until tagsArray.length() - 1) {
+                                                            tags += tagsArray[i].toString() + ", "
+                                                            if (i > 4) {
+                                                                tags.dropLast(1)
+                                                                tags += "..."
+                                                                return@breaking
+                                                            }
+                                                        }
+                                                    }
+                                                    if (tagsArray.length() < 6) tags = tags.removeSuffix(", ")
                                                     var oneCUR = CUR(
                                                         name = data.getJSONObject(i)
                                                             .getString("name"),
@@ -572,6 +585,9 @@ class MainActivity : AppCompatActivity() {
                                                             .getJSONObject("quote")
                                                             .getJSONObject("USD")
                                                             .getDouble("volume_change_24h"),
+                                                        cmc_rank = data.getJSONObject(i)
+                                                            .getInt("cmc_rank"),
+                                                        tags =tags
                                                     )
                                                     CURList.add(oneCUR)
                                                     //create name for autocompletetextview
@@ -651,7 +667,7 @@ class MainActivity : AppCompatActivity() {
             .addPathSegment("latest")
             .addQueryParameter(
                 "limit",
-                "500"
+                "999"
             )
             .build()
         val request = Request.Builder()
