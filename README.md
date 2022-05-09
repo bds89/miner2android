@@ -59,18 +59,16 @@ Cбор информации с ваших майнинг ферм.
   
 ## Пример config.yaml в [miner2mqtt](https://github.com/bds89/miner2mqtt), при использовании приложения:
 ```yaml
-MINER: Trex/danila-miner/lol-miner
+MINER: Trex/danila-miner/lol-miner/NBMiner
     #выбор GPU майнера (не обязательно)
-danila_command: "/home/ferma2/TON_miner/danila-miner run https://server1.whalestonpool.com your_walet_adress"
-    #Команда для запуска danila-miner(*обязательно, если используется `danila-miner`)
-lol_command: /home/bds89/lolMiner_v1.44_Lin64/1.44/dual_mine_eth_ton.sh
-    #Команда для запуска lol-miner(не обязательно, при запуске майнера скриптом m2m в mqtt будет передаваться дополнитльный параметр `lhrtune`)
-TrexAPI: http://127.0.0.1:4067
-    #адрес API для Trex майнера, если отличается от стандартного
+COMMAND: "/home/ferma2/TON_miner/danila-miner run https://server1.whalestonpool.com your_walet_adress"
+    #Пример команды для запуска danila-miner(*обязательно, если используется `danila-miner`)
+COMMAND: /home/bds89/lolMiner_v1.44_Lin64/1.44/dual_mine_eth_ton.sh
+    #Пример команды для запуска lol-miner(не обязательно, при запуске майнера скриптом m2m в mqtt будут передаваться дополнитльные параметры `lhrtune`, `re-calibrate`)
+API: http://127.0.0.1:4067
+    #Адрес API для майнера, если отличается от стандартного, можно не укаывать, если арес и порт совпадают со значением по умолчанию: `http://127.0.0.1:4067`
 TrexAPIPASS: YourWebGuiPassword
     #ваш пароль для Trex майнера
-lolAPI: http://127.0.0.1:4067
-    #адрес API для lol майнера (обязательно если ипользуется `lol-miner`)
 SUDO_PASS: pass
     #пароль суперпользователя, для изменения power_limit, только для Linux
 INTERVAL: 120s
