@@ -8,7 +8,6 @@ import android.graphics.drawable.AnimationDrawable
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
@@ -94,6 +93,8 @@ class NodeInfoFragment : Fragment() {
     private lateinit var hidden_params: MutableList<Int>
     private lateinit var all_cards_ids: MutableList<Int>
     private lateinit var dialog_videocard: NodeInfoFragment.MyDialogFragment
+    private lateinit var dialog_miner_state: NodeInfoFragment.DialogMinerState
+
     private lateinit var limitsOneRig:  ArrayList<LimitEntity?>
 
     private val dataModel:DataModel by activityViewModels()
@@ -119,11 +120,7 @@ class NodeInfoFragment : Fragment() {
         val viewGroup: ViewGroup = binding.linerMain
         viewGroup.layoutTransition.setAnimateParentHierarchy(false)
 
-         return binding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-//        resonce_time = System.currentTimeMillis()
+        //from ViewCreated
         arguments?.takeIf { it.containsKey(const.KEY_PCList) }?.apply {
             position = getInt(const.KEY_PosNum)
             PCList = getSerializable(const.KEY_PCList) as ArrayList<PC>
@@ -139,6 +136,11 @@ class NodeInfoFragment : Fragment() {
         }
         init()
         inflate_cards()
+        //===
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 
         //observers for save limits, and PCLists, and responce
         dataModel.PCList.observe(activity as LifecycleOwner) {
@@ -546,10 +548,15 @@ class NodeInfoFragment : Fragment() {
                 inflate_cards(true)
                 swipeContainer.isRefreshing = false
             }
+            //dialog miner state
             ivItemIcon.setOnClickListener {
                 val animationRotateCenter = AnimationUtils.loadAnimation(requireContext(), R.anim.rotate1)
                 ivItemIcon.startAnimation(animationRotateCenter)
-                lifecycleScope.launch { Log.e("ml", limitDao?.getAll().toString()) }
+
+                dialog_miner_state = DialogMinerState(PCList[position])
+                val manager = requireActivity().supportFragmentManager
+                dialog_miner_state.dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                dialog_miner_state.show(manager, "videocardDialog")
             }
             //animation
             linearLayout.animation =
@@ -753,6 +760,87 @@ class NodeInfoFragment : Fragment() {
         }
         return sorted
     }
+
+//dialog minerstate
+class DialogMinerState(val PC: PC) : DialogFragment() {
+
+    private var responce = ""
+    private lateinit var info:JSONObject
+    private var responceSend = ""
+    private lateinit var infoSend:JSONObject
+    var state = ""
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val builder = AlertDialog.Builder(activity, R.style.applyDialog)
+        val binding_d = DialogMinerStateBinding.inflate(layoutInflater)
+        with(binding_d) {
+            GlobalScope.launch(Dispatchers.Main) {
+                //get data from server
+                val params = mutableMapOf("value" to "Refresh", "request" to "miner_state")
+                try {
+                    responce = getDataFromServer(PC, "control", params)
+                    info = JSONObject(responce)
+                } catch (e: Exception) { Toast.makeText(requireContext(), e.toString(), Toast.LENGTH_LONG).show()
+                }
+                if (this@DialogMinerState::info.isInitialized) {
+                    //status code
+                    if (info["code"] == 200 && info["text"] != "Unknown state") {
+                        state = info["text"] as String
+                        var rbId = rbRuning.id
+                        when (state) {
+                            "Stop" -> rbId = rbStop.id
+                            "Start" -> rbId = rbStart.id
+                            "Restart" -> rbId = rbRestart.id
+                            "Running" -> rbId = rbRuning.id
+                            else -> {}
+                        }
+                        rg.check(rbId)
+                    } else Toast.makeText(requireContext(), getString(R.string.unknown_miner_state), Toast.LENGTH_LONG).show()
+                } else Toast.makeText(requireContext(), getString(R.string.error_get_miner_state), Toast.LENGTH_LONG).show()
+            }
+
+            rg.setOnCheckedChangeListener { radioGroup, i ->
+                var stateToSend = ""
+                when (i) {
+                    binding_d.rbStop.id -> stateToSend = "Stop"
+                    binding_d.rbStart.id -> stateToSend = "Start"
+                    binding_d.rbRestart.id -> stateToSend = "Restart"
+                    else -> return@setOnCheckedChangeListener
+                }
+                if (stateToSend != state) {
+                    GlobalScope.launch(Dispatchers.Main) {
+                        //post data to server
+                        val params = mutableMapOf("value" to stateToSend, "request" to "miner_state")
+                        try {
+                            responceSend = getDataFromServer(PC, "control", params)
+                            infoSend = JSONObject(responceSend)
+                        } catch (e: Exception) { Toast.makeText(requireContext(), e.toString(), Toast.LENGTH_LONG).show() }
+                        if (this@DialogMinerState::infoSend.isInitialized) {
+                            //status code
+                            if (infoSend["code"] == 200) {
+                                Toast.makeText(requireContext(), "Set ${infoSend["text"]}", Toast.LENGTH_LONG).show()
+                            } else {
+                                rg.clearCheck()
+                                Toast.makeText(requireContext(), getString(R.string.error_set_miner_state), Toast.LENGTH_LONG).show()
+                            }
+                        } else {
+                            rg.clearCheck()
+                            Toast.makeText(requireContext(), getString(R.string.error_set_miner_state), Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            }
+            builder.setView(binding_d.root)
+            return builder.create()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        dismiss()
+    }
+}
+
 //dialog videocard
 class MyDialogFragment(val PC: PC,
                        val gpu:JSONObject,
@@ -1174,5 +1262,9 @@ class MyDialogFragment(val PC: PC,
         responce_from_ViewModel.put(position, responce)
         dataModel.responce.value = responce_from_ViewModel
         super.onSaveInstanceState(saveInstanceState)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
     }
 }

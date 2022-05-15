@@ -54,6 +54,7 @@
         <entry key="app/src/main/res/layout/bottom_sheet_item.xml" value="0.33" />
         <entry key="app/src/main/res/layout/dialog_lang.xml" value="0.5" />
         <entry key="app/src/main/res/layout/dialog_language.xml" value="0.35625" />
+        <entry key="app/src/main/res/layout/dialog_miner_state.xml" value="0.2923076923076923" />
         <entry key="app/src/main/res/layout/dialog_saveLoad.xml" value="0.33" />
         <entry key="app/src/main/res/layout/dialog_saveload.xml" value="0.67" />
         <entry key="app/src/main/res/layout/dialog_theme.xml" value="0.5" />

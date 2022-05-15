@@ -82,6 +82,14 @@
     <string name="circulating">В обращении:</string>
     <string name="total_supply">Выпущено:</string>
     <string name="max_supply">Максимум:</string>
+    <string name="unknown_miner_state">Неизвестное состояние майнера</string>
+    <string name="error_get_miner_state">Ошибка получения состояния</string>
+    <string name="error_set_miner_state">Ошибка установки состояния</string>
+    <string name="miner_state">Состояние майнера</string>
+    <string name="start">Запустить</string>
+    <string name="restart">Перезапустить</string>
+    <string name="running">Запущен</string>
+    <string name="stop">Остановлен</string>
 
 
 </resources>

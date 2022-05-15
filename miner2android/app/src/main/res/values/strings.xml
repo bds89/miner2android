@@ -81,4 +81,12 @@
     <string name="circulating">Circulating:</string>
     <string name="total_supply">Total supply:</string>
     <string name="max_supply">Max supply:</string>
+    <string name="unknown_miner_state">Unknown miner state</string>
+    <string name="error_get_miner_state">Error get miner state</string>
+    <string name="error_set_miner_state">Error set miner state</string>
+    <string name="miner_state">Miner state</string>
+    <string name="stop">Stopped</string>
+    <string name="start">Start</string>
+    <string name="restart">Restart</string>
+    <string name="running">Running</string>
 </resources>

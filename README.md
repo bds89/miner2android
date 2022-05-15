@@ -33,6 +33,12 @@ Cбор информации с ваших майнинг ферм.
   <summary>1.3</summary>
 
 - Курсы валют, с [CoinMarketCup](https://coinmarketcap.com), в настройках необходимо ввести токен API Token. Бесплатный токен можно получить на [CoinMarketCup](https://coinmarketcap.com/api/)
+
+<details>
+  <summary>1.3.1</summary>
+
+- Управление процессом майнера. Для вызова меню, кликнете по иконке фермы в левом верхнем углу.
+</details>
 </details>
 
 ## Описание
